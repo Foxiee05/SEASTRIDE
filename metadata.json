@@ -1,6 +1,6 @@
 {
   "name": "SeaStride",
   "description": "Pirate ship step tracker and battle game with upgrades, raids, and footstep resource management.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["accelerometer", "gyroscope"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

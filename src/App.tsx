@@ -19,9 +19,13 @@ function MainAppContent() {
   const [activeTab, setActiveTab] = useState<'home' | 'game'>('game');
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
+  // Smooth Drag & Swipe Physics State for Side-by-Side Screens
+  const [dragOffsetX, setDragOffsetX] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
   // Auto-start pirate BGM on load & play distinct sounds for buttons
   useEffect(() => {
-    // Attempt BGM start immediately
     soundFx.startBgm();
 
     const handleFirstUserInteraction = () => {
@@ -71,35 +75,50 @@ function MainAppContent() {
     };
   }, []);
 
-  // Touch Swipe Gesture State
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  // Continuous Drag & Side-by-Side Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent | React.PointerEvent) => {
+    // Avoid capturing inputs/buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, textarea, [role="button"]')) return;
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (touch) {
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    touchStartRef.current = { x: clientX, y: clientY };
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent | React.PointerEvent) => {
+    if (!touchStartRef.current || !isDragging) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    const deltaX = clientX - touchStartRef.current.x;
+    const deltaY = clientY - touchStartRef.current.y;
+
+    // Trigger drag when horizontal motion exceeds vertical scroll
+    if (Math.abs(deltaX) > Math.abs(deltaY) + 4) {
+      // Rubberband dampening when pulling past bounds
+      if ((activeTab === 'home' && deltaX > 0) || (activeTab === 'game' && deltaX < 0)) {
+        setDragOffsetX(deltaX * 0.25);
+      } else {
+        setDragOffsetX(deltaX);
+      }
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = () => {
     if (!touchStartRef.current) return;
-    const touch = e.changedTouches[0];
-    if (!touch) return;
 
-    const deltaX = touch.clientX - touchStartRef.current.x;
-    const deltaY = touch.clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-
-    // Minimum swipe threshold of 35px, and horizontal distance must exceed vertical distance
-    if (Math.abs(deltaX) > 35 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX < 0 && activeTab === 'home') {
-        // Swiping Left: Go from Steps Bar to Game Screen
-        setActiveTab('game');
-      } else if (deltaX > 0 && activeTab === 'game') {
-        // Swiping Right: Go from Game Screen to Steps Bar
-        setActiveTab('home');
-      }
+    // Minimum swipe threshold of 40px to switch tabs
+    if (dragOffsetX < -40 && activeTab === 'home') {
+      setActiveTab('game');
+    } else if (dragOffsetX > 40 && activeTab === 'game') {
+      setActiveTab('home');
     }
+
+    touchStartRef.current = null;
+    setIsDragging(false);
+    setDragOffsetX(0);
   };
 
   const openModal = (modal: NonNullable<ActiveModal>) => {
@@ -110,6 +129,9 @@ function MainAppContent() {
     setActiveModal(null);
   };
 
+  // Base translate percentage for side-by-side screens (0% for Home/Steps, -50% for Game)
+  const baseTranslatePercent = activeTab === 'home' ? 0 : -50;
+
   return (
     <div className="h-[100dvh] w-full bg-[#0c4a6e] font-serif text-amber-100 antialiased selection:bg-[#facc15] selection:text-stone-950 flex justify-center items-center p-0 sm:p-2 relative overflow-hidden">
       {/* Background theme ambient elements */}
@@ -118,12 +140,8 @@ function MainAppContent() {
         <div className="absolute top-10 right-10 w-48 h-48 bg-[#fef08a] rounded-full blur-3xl opacity-20" />
       </div>
 
-      {/* Mobile / Desktop Frame Container for Game App experience - Fixed viewport height for zero-scroll mobile UI */}
-      <div 
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="w-full max-w-md sm:max-w-2xl bg-[#78350f] border-0 sm:border-8 border-[#451a03] sm:rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden h-full max-h-[100dvh] sm:max-h-[850px] flex flex-col relative z-10"
-      >
+      {/* Mobile / Desktop Frame Container */}
+      <div className="w-full max-w-md sm:max-w-2xl bg-[#78350f] border-0 sm:border-8 border-[#451a03] sm:rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden h-full max-h-[100dvh] sm:max-h-[850px] flex flex-col relative z-10">
         
         {/* HUD Top Bar */}
         <HeaderHUD
@@ -132,13 +150,32 @@ function MainAppContent() {
           openModal={openModal}
         />
 
-        {/* Main View Area */}
-        <main className="flex-1 overflow-y-auto relative flex flex-col">
-          {activeTab === 'home' ? (
-            <HomeScreen />
-          ) : (
-            <GameScreen openModal={openModal} />
-          )}
+        {/* Main View Area: Side-by-Side Screen Carousel with Smooth Swipe */}
+        <main 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          className="flex-1 relative overflow-hidden flex flex-col select-none touch-pan-y"
+        >
+          <div 
+            className={`w-[200%] h-full flex flex-row ${
+              isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'
+            }`}
+            style={{
+              transform: `translateX(calc(${baseTranslatePercent}% + ${dragOffsetX}px))`,
+            }}
+          >
+            {/* Screen 1: Steps Bar (Home) */}
+            <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
+              <HomeScreen />
+            </div>
+
+            {/* Screen 2: Game Screen */}
+            <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
+              <GameScreen openModal={openModal} />
+            </div>
+          </div>
         </main>
 
         {/* Theme Footer - Compact */}

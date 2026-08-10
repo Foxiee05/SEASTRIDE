@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Footprints, Activity, Flame, Award, Play, Pause, RefreshCw, Zap } from 'lucide-react';
+import { Footprints, Activity, Flame, Award, Play, Pause, Zap, ShieldAlert, CheckCircle2, AlertCircle, Compass, Sliders, Smartphone } from 'lucide-react';
+import { usePedometer, SensitivityLevel } from '../hooks/usePedometer';
 
 export const HomeScreen: React.FC = () => {
   const { totalStepsToday, stepRecords, stepStats, addSteps, isAutoWalking, toggleAutoWalk } = useGame();
   const [chartMode, setChartMode] = useState<'day' | 'week' | 'month'>('week');
+
+  // Integrated Pedometer Sensor Hook with sensitivity control & motion level
+  const {
+    permissionStatus,
+    isListening,
+    lastMotionMagnitude,
+    sensorStepsCount,
+    sensitivity,
+    setSensitivity,
+    hasDetectedMotion,
+    requestPermission,
+  } = usePedometer({
+    onStep: (count) => {
+      addSteps(count);
+    },
+  });
 
   // Chart data calculation
   const dayData = [
@@ -34,6 +51,9 @@ export const HomeScreen: React.FC = () => {
   // Calculate calories burned & distance approx
   const caloriesBurned = Math.round(totalStepsToday * 0.04);
   const distanceKm = (totalStepsToday * 0.0008).toFixed(2);
+
+  // Live motion gauge percentage (0 to 10 m/s²)
+  const motionPercent = Math.min(100, Math.max(0, (lastMotionMagnitude / 4.0) * 100));
 
   return (
     <div className="p-2 sm:p-4 max-w-2xl mx-auto space-y-2 sm:space-y-4 text-amber-100 pb-2 select-none flex-1 flex flex-col justify-between">
@@ -108,7 +128,84 @@ export const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Step Simulation & Motion Sensor Controls */}
+      {/* --- PHYSICAL ACTIVITY / PHONE SENSOR PEDOMETER CARD --- */}
+      <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] sm:text-xs font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1.5">
+            <Smartphone className="w-4 h-4 text-amber-400" />
+            <span>Phone Physical Pedometer</span>
+          </span>
+
+          <span className="flex items-center gap-1 bg-[#16a34a] px-2 py-0.5 rounded-full text-[9px] font-extrabold text-white uppercase shadow">
+            <CheckCircle2 className="w-3 h-3" /> Sensor Active
+          </span>
+        </div>
+
+        {/* Real-time Motion Level Meter */}
+        <div className="bg-[#451a03] border border-[#b45309] rounded-xl p-2.5 space-y-1.5">
+          <div className="flex justify-between items-center text-[10px] font-bold text-amber-200">
+            <span className="flex items-center gap-1">
+              <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              <span>Real-Time Phone Motion Force:</span>
+            </span>
+            <span className="font-mono text-emerald-300 font-extrabold">{lastMotionMagnitude.toFixed(1)} m/s²</span>
+          </div>
+
+          <div className="w-full bg-[#1c0a02] h-2.5 rounded-full overflow-hidden border border-[#78350f]">
+            <div
+              className={`h-full transition-all duration-150 rounded-full ${
+                lastMotionMagnitude > 1.2 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-amber-600'
+              }`}
+              style={{ width: `${motionPercent}%` }}
+            />
+          </div>
+
+          <div className="flex justify-between text-[9px] text-amber-200/70 font-mono">
+            <span>Resting (0)</span>
+            <span className="text-emerald-300 font-bold">Step Impact (&gt; 1.1)</span>
+            <span>Heavy (4+)</span>
+          </div>
+        </div>
+
+        {/* Sensitivity Adjustment */}
+        <div className="bg-[#451a03] border border-[#b45309] rounded-xl p-2 space-y-1">
+          <div className="flex items-center justify-between text-[10px] font-black text-[#fde68a] uppercase">
+            <span className="flex items-center gap-1">
+              <Sliders className="w-3 h-3 text-amber-400" />
+              <span>Walking Sensitivity Calibration</span>
+            </span>
+            <span className="text-emerald-400 font-mono">{sensitivity.toUpperCase()}</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1">
+            {(['high', 'medium', 'low'] as const).map(level => (
+              <button
+                key={level}
+                onClick={() => setSensitivity(level)}
+                className={`py-1 rounded text-[10px] font-bold uppercase transition-colors border ${
+                  sensitivity === level
+                    ? 'bg-[#15803d] border-[#16a34a] text-white shadow'
+                    : 'bg-[#78350f]/60 border-[#b45309] text-amber-200/80 hover:text-white'
+                }`}
+              >
+                {level === 'high' ? 'High (Gentle)' : level === 'medium' ? 'Normal' : 'Low (Firm)'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Manual Permission Prompt if needed */}
+        {permissionStatus === 'prompt' && (
+          <button
+            onClick={() => requestPermission()}
+            className="w-full bg-[#16a34a] hover:bg-[#22c55e] active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl border-b-2 border-[#064e3b] shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider"
+          >
+            <span>👟 Grant Phone Motion & Activity Sensor Permission</span>
+          </button>
+        )}
+      </div>
+
+      {/* Step Simulation & Motion Controls */}
       <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="text-[10px] sm:text-xs font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1">
