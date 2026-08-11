@@ -3,6 +3,7 @@ import { GameProvider } from './context/GameContext';
 import { HeaderHUD } from './components/HeaderHUD';
 import { HomeScreen } from './components/HomeScreen';
 import { GameScreen } from './components/GameScreen';
+import { MenuScreen } from './components/MenuScreen';
 import { UpgradesModal } from './components/UpgradesModal';
 import { ShopModal } from './components/ShopModal';
 import { ServerModal } from './components/ServerModal';
@@ -16,7 +17,7 @@ import { soundFx } from './utils/audio';
 type ActiveModal = 'upgrades' | 'shop' | 'server' | 'repair' | 'raids' | 'attack' | 'shipInspect' | 'profile' | null;
 
 function MainAppContent() {
-  const [activeTab, setActiveTab] = useState<'home' | 'game'>('game');
+  const [activeTab, setActiveTab] = useState<'menu' | 'home' | 'game'>('menu');
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   // Smooth Drag & Swipe Physics State for Side-by-Side Screens
@@ -144,39 +145,48 @@ function MainAppContent() {
       <div className="w-full max-w-md sm:max-w-2xl bg-[#78350f] border-0 sm:border-8 border-[#451a03] sm:rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden h-full max-h-[100dvh] sm:max-h-[850px] flex flex-col relative z-10">
         
         {/* HUD Top Bar */}
-        <HeaderHUD
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          openModal={openModal}
-        />
+        {activeTab !== 'menu' && (
+          <HeaderHUD
+            activeTab={activeTab as 'home' | 'game'}
+            setActiveTab={(tab: 'home' | 'game') => setActiveTab(tab)}
+            openModal={openModal}
+          />
+        )}
 
-        {/* Main View Area: Side-by-Side Screen Carousel with Smooth Swipe */}
-        <main 
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          className="flex-1 relative overflow-hidden flex flex-col select-none touch-pan-y"
-        >
-          <div 
-            className={`w-[200%] h-full flex flex-row ${
-              isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'
-            }`}
-            style={{
-              transform: `translateX(calc(${baseTranslatePercent}% + ${dragOffsetX}px))`,
-            }}
+        {/* Main View Area */}
+        {activeTab === 'menu' ? (
+          <MenuScreen 
+            onSelectSteps={() => setActiveTab('home')}
+            onSelectGame={() => setActiveTab('game')}
+          />
+        ) : (
+          <main 
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+            className="flex-1 relative overflow-hidden flex flex-col select-none touch-pan-y"
           >
-            {/* Screen 1: Steps Bar (Home) */}
-            <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
-              <HomeScreen />
-            </div>
+            <div 
+              className={`w-[200%] h-full flex flex-row ${
+                isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'
+              }`}
+              style={{
+                transform: `translateX(calc(${baseTranslatePercent}% + ${dragOffsetX}px))`,
+              }}
+            >
+              {/* Screen 1: Steps Bar (Home) */}
+              <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
+                <HomeScreen />
+              </div>
 
-            {/* Screen 2: Game Screen */}
-            <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
-              <GameScreen openModal={openModal} />
+              {/* Screen 2: Game Screen */}
+              <div className="w-1/2 h-full overflow-y-auto flex-shrink-0">
+                <GameScreen openModal={openModal} />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        )}
 
         {/* Theme Footer - Compact */}
         <footer className="w-full h-6 sm:h-8 bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/70 text-[9px] sm:text-[10px] tracking-widest uppercase font-bold border-t border-[#78350f] flex-shrink-0">

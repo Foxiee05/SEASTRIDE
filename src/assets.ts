@@ -1,4 +1,4 @@
-import islandBeachBg from './assets/images/ref_style_ship_bg_1786462920050.jpg';
+import islandBeachBg from './assets/images/sand_14_ratio_bg_1786468683444.jpg';
 import fullscreenTopdownSea from './assets/images/fullscreen_topdown_sea_1786367444636.jpg';
 import pirateIconsPattern from './assets/images/pirate_icons_pattern_1786366557513.jpg';
 import pirateShipLv1 from './assets/images/pirate_ship_lv1_1786362586510.jpg';
@@ -16,6 +16,9 @@ import pirateAvatarFirstmate from './assets/images/pirate_avatar_firstmate_17863
 import pirateAvatarMonkey from './assets/images/pirate_avatar_monkey_1786369459159.jpg';
 import pirateAvatarLady from './assets/images/pirate_avatar_lady_1786369475175.jpg';
 
+import generatedLogo from './assets/images/seastride_logo_green_ref_1786471379926.jpg';
+import menuOceanBg from './assets/images/menu_ocean_bg_islands_ref_1786471397915.jpg';
+
 import { preloadCutouts } from './utils/imageUtils';
 
 export const PIRATE_AVATARS = [
@@ -27,6 +30,8 @@ export const PIRATE_AVATARS = [
 ];
 
 export const ASSETS = {
+  logo: generatedLogo,
+  menuBg: menuOceanBg,
   beachBg: islandBeachBg,
   topdownOcean: fullscreenTopdownSea,
   piratePatternBg: pirateIconsPattern,
