@@ -1,4 +1,4 @@
-import islandBeachBg from './assets/images/island_beach_bg_1786368355241.jpg';
+import islandBeachBg from './assets/images/ref_style_ship_bg_1786462920050.jpg';
 import fullscreenTopdownSea from './assets/images/fullscreen_topdown_sea_1786367444636.jpg';
 import pirateIconsPattern from './assets/images/pirate_icons_pattern_1786366557513.jpg';
 import pirateShipLv1 from './assets/images/pirate_ship_lv1_1786362586510.jpg';

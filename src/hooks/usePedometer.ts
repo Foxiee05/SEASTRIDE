@@ -8,11 +8,16 @@ interface UsePedometerOptions {
 }
 
 export function usePedometer({ onStep }: UsePedometerOptions) {
-  const [permissionStatus, setPermissionStatus] = useState<SensorPermissionState>('prompt');
+  const [permissionStatus, setPermissionStatus] = useState<SensorPermissionState>(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('pedometer_allowed') === 'true') {
+      return 'granted';
+    }
+    return 'prompt';
+  });
   const [isListening, setIsListening] = useState<boolean>(false);
   const [lastMotionMagnitude, setLastMotionMagnitude] = useState<number>(0);
   const [sensorStepsCount, setSensorStepsCount] = useState<number>(0);
-  const [sensitivity, setSensitivity] = useState<SensitivityLevel>('high');
+  const [sensitivity, setSensitivity] = useState<SensitivityLevel>('medium');
   const [hasDetectedMotion, setHasDetectedMotion] = useState<boolean>(false);
 
   // References for motion processing & peak detection
@@ -33,7 +38,7 @@ export function usePedometer({ onStep }: UsePedometerOptions) {
       case 'low':
         return 2.2; // Vigorous walking / jogging
       default:
-        return 1.3;
+        return 1.6;
     }
   };
 
@@ -131,6 +136,7 @@ export function usePedometer({ onStep }: UsePedometerOptions) {
       try {
         const response = await deviceMotionAny.requestPermission();
         if (response === 'granted') {
+          if (typeof window !== 'undefined') localStorage.setItem('pedometer_allowed', 'true');
           setPermissionStatus('granted');
           setIsListening(true);
           window.addEventListener('devicemotion', handleDeviceMotion, true);
@@ -147,6 +153,7 @@ export function usePedometer({ onStep }: UsePedometerOptions) {
     // Standard Android / Chrome listener attachment
     try {
       window.addEventListener('devicemotion', handleDeviceMotion, true);
+      if (typeof window !== 'undefined') localStorage.setItem('pedometer_allowed', 'true');
       setPermissionStatus('granted');
       setIsListening(true);
       return true;

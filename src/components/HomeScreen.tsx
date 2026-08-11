@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Footprints, Activity, Flame, Award, Play, Pause, Zap, ShieldAlert, CheckCircle2, AlertCircle, Compass, Sliders, Smartphone } from 'lucide-react';
-import { usePedometer, SensitivityLevel } from '../hooks/usePedometer';
+import { Footprints, Activity, Flame, Award, Zap, Compass } from 'lucide-react';
+import { usePedometer } from '../hooks/usePedometer';
 
 export const HomeScreen: React.FC = () => {
-  const { totalStepsToday, stepRecords, stepStats, addSteps, isAutoWalking, toggleAutoWalk } = useGame();
+  const { totalStepsToday, stepRecords, stepStats, addSteps } = useGame();
   const [chartMode, setChartMode] = useState<'day' | 'week' | 'month'>('week');
 
-  // Integrated Pedometer Sensor Hook with sensitivity control & motion level
-  const {
-    permissionStatus,
-    isListening,
-    lastMotionMagnitude,
-    sensorStepsCount,
-    sensitivity,
-    setSensitivity,
-    hasDetectedMotion,
-    requestPermission,
-  } = usePedometer({
+  // Integrated Pedometer Sensor Hook
+  const { permissionStatus, requestPermission } = usePedometer({
     onStep: (count) => {
       addSteps(count);
     },
@@ -52,8 +43,40 @@ export const HomeScreen: React.FC = () => {
   const caloriesBurned = Math.round(totalStepsToday * 0.04);
   const distanceKm = (totalStepsToday * 0.0008).toFixed(2);
 
-  // Live motion gauge percentage (0 to 10 m/s²)
-  const motionPercent = Math.min(100, Math.max(0, (lastMotionMagnitude / 4.0) * 100));
+  // If user hasn't granted motion pedometer permission yet, show permission prompt box only
+  if (permissionStatus !== 'granted') {
+    return (
+      <div className="p-4 max-w-md mx-auto my-auto text-amber-100 select-none flex-1 flex flex-col justify-center items-center">
+        <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-2xl p-5 sm:p-6 shadow-2xl text-center space-y-4 w-full relative overflow-hidden">
+          {/* Decorative corner skulls */}
+          <div className="absolute top-2 left-2 text-lg opacity-40">☠️</div>
+          <div className="absolute top-2 right-2 text-lg opacity-40">☠️</div>
+
+          <div className="w-16 h-16 bg-[#451a03] border-2 border-[#b45309] rounded-full flex items-center justify-center mx-auto text-amber-300 shadow-inner">
+            <Footprints className="w-8 h-8 text-[#facc15] animate-bounce" />
+          </div>
+
+          <div className="space-y-1.5">
+            <h3 className="text-base sm:text-lg font-serif font-black uppercase text-[#fde68a] tracking-wide">
+              Allow Motion Pedometer
+            </h3>
+            <p className="text-xs sm:text-sm text-amber-100/90 leading-relaxed">
+              SeaStride uses your phone's motion sensor to track physical footsteps while walking.
+              Allow pedometer access to unlock your step box, earn Gold Coins, and voyage the seas!
+            </p>
+          </div>
+
+          <button
+            onClick={() => requestPermission()}
+            className="w-full bg-[#16a34a] hover:bg-[#22c55e] active:scale-95 text-white font-serif font-black text-xs sm:text-sm py-3 px-4 rounded-xl border-b-4 border-[#064e3b] shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider transition-transform cursor-pointer"
+          >
+            <Compass className="w-4 h-4 text-[#fde68a]" />
+            <span>Allow Motion Pedometer</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-2 sm:p-4 max-w-2xl mx-auto space-y-2 sm:space-y-4 text-amber-100 pb-2 select-none flex-1 flex flex-col justify-between">
@@ -125,137 +148,6 @@ export const HomeScreen: React.FC = () => {
               Walk {stepStats.stepsToNextReward} more steps for +10 Gold Coins!
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* --- PHYSICAL ACTIVITY / PHONE SENSOR PEDOMETER CARD --- */}
-      <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] sm:text-xs font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1.5">
-            <Smartphone className="w-4 h-4 text-amber-400" />
-            <span>Phone Physical Pedometer</span>
-          </span>
-
-          <span className="flex items-center gap-1 bg-[#16a34a] px-2 py-0.5 rounded-full text-[9px] font-extrabold text-white uppercase shadow">
-            <CheckCircle2 className="w-3 h-3" /> Sensor Active
-          </span>
-        </div>
-
-        {/* Real-time Motion Level Meter */}
-        <div className="bg-[#451a03] border border-[#b45309] rounded-xl p-2.5 space-y-1.5">
-          <div className="flex justify-between items-center text-[10px] font-bold text-amber-200">
-            <span className="flex items-center gap-1">
-              <Activity className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <span>Real-Time Phone Motion Force:</span>
-            </span>
-            <span className="font-mono text-emerald-300 font-extrabold">{lastMotionMagnitude.toFixed(1)} m/s²</span>
-          </div>
-
-          <div className="w-full bg-[#1c0a02] h-2.5 rounded-full overflow-hidden border border-[#78350f]">
-            <div
-              className={`h-full transition-all duration-150 rounded-full ${
-                lastMotionMagnitude > 1.2 ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-amber-600'
-              }`}
-              style={{ width: `${motionPercent}%` }}
-            />
-          </div>
-
-          <div className="flex justify-between text-[9px] text-amber-200/70 font-mono">
-            <span>Resting (0)</span>
-            <span className="text-emerald-300 font-bold">Step Impact (&gt; 1.1)</span>
-            <span>Heavy (4+)</span>
-          </div>
-        </div>
-
-        {/* Sensitivity Adjustment */}
-        <div className="bg-[#451a03] border border-[#b45309] rounded-xl p-2 space-y-1">
-          <div className="flex items-center justify-between text-[10px] font-black text-[#fde68a] uppercase">
-            <span className="flex items-center gap-1">
-              <Sliders className="w-3 h-3 text-amber-400" />
-              <span>Walking Sensitivity Calibration</span>
-            </span>
-            <span className="text-emerald-400 font-mono">{sensitivity.toUpperCase()}</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-1">
-            {(['high', 'medium', 'low'] as const).map(level => (
-              <button
-                key={level}
-                onClick={() => setSensitivity(level)}
-                className={`py-1 rounded text-[10px] font-bold uppercase transition-colors border ${
-                  sensitivity === level
-                    ? 'bg-[#15803d] border-[#16a34a] text-white shadow'
-                    : 'bg-[#78350f]/60 border-[#b45309] text-amber-200/80 hover:text-white'
-                }`}
-              >
-                {level === 'high' ? 'High (Gentle)' : level === 'medium' ? 'Normal' : 'Low (Firm)'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Manual Permission Prompt if needed */}
-        {permissionStatus === 'prompt' && (
-          <button
-            onClick={() => requestPermission()}
-            className="w-full bg-[#16a34a] hover:bg-[#22c55e] active:scale-95 text-white font-black text-xs py-2 px-3 rounded-xl border-b-2 border-[#064e3b] shadow-lg flex items-center justify-center gap-2 uppercase tracking-wider"
-          >
-            <span>👟 Grant Phone Motion & Activity Sensor Permission</span>
-          </button>
-        )}
-      </div>
-
-      {/* Step Simulation & Motion Controls */}
-      <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] sm:text-xs font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1">
-            <span>👟</span> Step Simulator
-          </span>
-          <button
-            onClick={toggleAutoWalk}
-            className={`px-2.5 py-1 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase italic flex items-center gap-1 transition-all border-b-2 sm:border-b-4 border-r ${
-              isAutoWalking
-                ? 'bg-[#16a34a] border-[#064e3b] text-white animate-pulse'
-                : 'bg-[#1d4ed8] border-[#1e3a8a] text-white'
-            }`}
-          >
-            {isAutoWalking ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            <span>{isAutoWalking ? 'Auto Walking On' : 'Start Auto Walk'}</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-4 gap-1.5">
-          <button
-            onClick={() => addSteps(100)}
-            className="bg-[#b45309] hover:bg-[#d97706] active:translate-y-0.5 border-b-2 border-r border-[#451a03] py-1.5 rounded-lg text-center text-[10px] sm:text-xs font-black text-white shadow-md italic uppercase"
-          >
-            +100 Steps
-            <div className="text-[9px] text-[#fde68a] font-bold">+10 🪙</div>
-          </button>
-
-          <button
-            onClick={() => addSteps(500)}
-            className="bg-[#b45309] hover:bg-[#d97706] active:translate-y-0.5 border-b-2 border-r border-[#451a03] py-1.5 rounded-lg text-center text-[10px] sm:text-xs font-black text-white shadow-md italic uppercase"
-          >
-            +500 Steps
-            <div className="text-[9px] text-[#fde68a] font-bold">+50 🪙</div>
-          </button>
-
-          <button
-            onClick={() => addSteps(1000)}
-            className="bg-[#b45309] hover:bg-[#d97706] active:translate-y-0.5 border-b-2 border-r border-[#451a03] py-1.5 rounded-lg text-center text-[10px] sm:text-xs font-black text-white shadow-md italic uppercase"
-          >
-            +1k Steps
-            <div className="text-[9px] text-[#fde68a] font-bold">+100 🪙</div>
-          </button>
-
-          <button
-            onClick={() => addSteps(2500)}
-            className="bg-[#16a34a] hover:bg-[#22c55e] active:translate-y-0.5 border-b-2 border-r border-[#064e3b] py-1.5 rounded-lg text-center text-[10px] sm:text-xs font-black text-white shadow-md italic uppercase"
-          >
-            +2.5k Steps
-            <div className="text-[9px] text-[#fde68a] font-bold">+250 🪙</div>
-          </button>
         </div>
       </div>
 
