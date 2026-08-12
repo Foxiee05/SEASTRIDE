@@ -29,7 +29,7 @@ export const ShipDisplay: React.FC<ShipDisplayProps> = ({
   const rawShieldImg = getShieldImageForLevel(shieldLevel);
 
   // Opaque cutout hooks so ship/items have 0 background and 100% opaque bodies
-  const shipImg = useCutoutImage(rawShipImg);
+  const shipImg = useCutoutImage(rawShipImg, { mode: 'edge' });
   const cannonImg = useCutoutImage(rawCannonImg);
   const shieldImg = useCutoutImage(rawShieldImg);
 

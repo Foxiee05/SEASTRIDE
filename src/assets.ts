@@ -1,13 +1,24 @@
 import islandBeachBg from './assets/images/sand_14_ratio_bg_1786468683444.jpg';
 import fullscreenTopdownSea from './assets/images/fullscreen_topdown_sea_1786367444636.jpg';
 import pirateIconsPattern from './assets/images/pirate_icons_pattern_1786366557513.jpg';
-import pirateShipLv1 from './assets/images/pirate_ship_lv1_1786362586510.jpg';
-import pirateShipLv5 from './assets/images/pirate_ship_lv5_1786362597288.jpg';
-import pirateShipLv10 from './assets/images/pirate_ship_lv10_1786362609547.jpg';
+import pirateShipLv1 from './assets/images/ship_v2_lv1_green_1786547858986.jpg';
+import pirateShipLv2 from './assets/images/ship_v2_lv2_green_1786547873059.jpg';
+import pirateShipLv3 from './assets/images/ship_v2_lv3_green_1786547883554.jpg';
+import pirateShipLv4 from './assets/images/ship_v2_lv4_green_1786547894350.jpg';
+import pirateShipLv5 from './assets/images/ship_v2_lv5_green_1786547906375.jpg';
+import pirateShipLv6 from './assets/images/ship_v2_lv6_green_1786547924868.jpg';
+import pirateShipLv7 from './assets/images/ship_v2_lv7_green_1786547939497.jpg';
+import pirateShipLv8 from './assets/images/ship_v2_lv8_green_1786547951397.jpg';
+import pirateShipLv9 from './assets/images/ship_v2_lv9_green_1786547963315.jpg';
+import pirateShipLv10 from './assets/images/ship_v2_lv10_green_1786547975219.jpg';
 import pirateCannonLv1 from './assets/images/pirate_cannon_lv1_1786362622827.jpg';
 import pirateCannonLv5 from './assets/images/pirate_cannon_lv5_1786362665481.jpg';
-import pirateShieldLv1 from './assets/images/pirate_shield_lv1_1786362638776.jpg';
-import pirateShieldLv3 from './assets/images/pirate_shield_lv3_1786362675977.jpg';
+import pirateShieldLv1 from './assets/images/shield_v2_lv1_green_1786549192615.jpg';
+import pirateShieldLv2 from './assets/images/shield_v2_lv2_green_1786549216767.jpg';
+import pirateShieldLv3 from './assets/images/shield_v2_lv3_green_1786549233279.jpg';
+import pirateShieldLv4 from './assets/images/shield_v2_lv4_green_1786549247559.jpg';
+import pirateShieldLv5 from './assets/images/shield_v2_lv5_green_1786549262955.jpg';
+import pirateShieldLv6 from './assets/images/shield_v2_lv6_green_1786549501570.jpg';
 import pirateBombBtn from './assets/images/pirate_bomb_btn_1786362650907.jpg';
 
 import pirateAvatarCaptain from './assets/images/pirate_avatar_captain_1786369408051.jpg';
@@ -37,7 +48,14 @@ export const ASSETS = {
   piratePatternBg: pirateIconsPattern,
   ships: {
     lv1: pirateShipLv1,
+    lv2: pirateShipLv2,
+    lv3: pirateShipLv3,
+    lv4: pirateShipLv4,
     lv5: pirateShipLv5,
+    lv6: pirateShipLv6,
+    lv7: pirateShipLv7,
+    lv8: pirateShipLv8,
+    lv9: pirateShipLv9,
     lv10: pirateShipLv10,
   },
   cannons: {
@@ -46,26 +64,52 @@ export const ASSETS = {
   },
   shields: {
     lv1: pirateShieldLv1,
+    lv2: pirateShieldLv2,
     lv3: pirateShieldLv3,
+    lv4: pirateShieldLv4,
+    lv5: pirateShieldLv5,
+    lv6: pirateShieldLv6,
   },
   bombBtn: pirateBombBtn,
 };
 
-// Immediately pre-warm ship, cannon, and shield cutouts so "The Sea" opens with zero lag
+// Immediately pre-warm ship cutouts with edge detection for green screen
 preloadCutouts([
   pirateShipLv1,
+  pirateShipLv2,
+  pirateShipLv3,
+  pirateShipLv4,
   pirateShipLv5,
+  pirateShipLv6,
+  pirateShipLv7,
+  pirateShipLv8,
+  pirateShipLv9,
   pirateShipLv10,
+  pirateShieldLv1,
+  pirateShieldLv2,
+  pirateShieldLv3,
+  pirateShieldLv4,
+  pirateShieldLv5,
+  pirateShieldLv6,
+], { mode: 'edge' });
+
+// Pre-warm cannons with default white background removal
+preloadCutouts([
   pirateCannonLv1,
   pirateCannonLv5,
-  pirateShieldLv1,
-  pirateShieldLv3,
 ]);
 
 
 export function getShipImageForLevel(level: number): string {
-  if (level <= 3) return ASSETS.ships.lv1;
-  if (level <= 7) return ASSETS.ships.lv5;
+  if (level <= 1) return ASSETS.ships.lv1;
+  if (level === 2) return ASSETS.ships.lv2;
+  if (level === 3) return ASSETS.ships.lv3;
+  if (level === 4) return ASSETS.ships.lv4;
+  if (level === 5) return ASSETS.ships.lv5;
+  if (level === 6) return ASSETS.ships.lv6;
+  if (level === 7) return ASSETS.ships.lv7;
+  if (level === 8) return ASSETS.ships.lv8;
+  if (level === 9) return ASSETS.ships.lv9;
   return ASSETS.ships.lv10;
 }
 
@@ -76,5 +120,9 @@ export function getCannonImageForLevel(level: number): string {
 
 export function getShieldImageForLevel(level: number): string {
   if (level <= 1) return ASSETS.shields.lv1;
-  return ASSETS.shields.lv3;
+  if (level === 2) return ASSETS.shields.lv2;
+  if (level === 3) return ASSETS.shields.lv3;
+  if (level === 4) return ASSETS.shields.lv4;
+  if (level === 5) return ASSETS.shields.lv5;
+  return ASSETS.shields.lv6;
 }

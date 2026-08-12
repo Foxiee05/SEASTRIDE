@@ -198,7 +198,7 @@ const PlayerTargetItem: React.FC<{
   onSelect: () => void;
 }> = ({ player: p, isSelected, onSelect }) => {
   const rawShipImg = getShipImageForLevel(p.shipLevel);
-  const shipImg = useCutoutImage(rawShipImg);
+  const shipImg = useCutoutImage(rawShipImg, { mode: 'edge' });
 
   return (
     <div

@@ -8,6 +8,11 @@ interface UpgradesModalProps {
   onClose: () => void;
 }
 
+const ItemImg = ({ src, alt, className }: { src: string, alt: string, className: string }) => {
+  const cutoutSrc = useCutoutImage(src);
+  return <img src={cutoutSrc} alt={alt} className={className} />;
+};
+
 export const UpgradesModal: React.FC<UpgradesModalProps> = ({ onClose }) => {
   const {
     coins,
@@ -16,16 +21,25 @@ export const UpgradesModal: React.FC<UpgradesModalProps> = ({ onClose }) => {
     cannonLevel,
     cannonCount,
     shieldLevel,
+    ownedCannons,
+    equippedCannons,
+    ownedShields,
+    equippedShield,
     upgradeShip,
-    upgradeCannon,
     buyCannon,
-    upgradeShield
+    upgradeCannon,
+    equipCannon,
+    unequipCannon,
+    buyShield,
+    upgradeShield,
+    equipShield,
+    unequipShield
   } = useGame();
 
   const [activeTab, setActiveTab] = useState<'ship' | 'cannons' | 'shield'>('ship');
 
   // Cutout images for 100% opaque render without translucent background
-  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel));
+  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel), { mode: 'edge' });
   const cannonImg = useCutoutImage(getCannonImageForLevel(cannonLevel));
   const shieldImg = useCutoutImage(getShieldImageForLevel(shieldLevel));
 
@@ -156,52 +170,84 @@ export const UpgradesModal: React.FC<UpgradesModalProps> = ({ onClose }) => {
 
           {/* CANNONS TAB */}
           {activeTab === 'cannons' && (
-            <div className="space-y-4 text-center">
-              <div className="bg-[#451a03] border-4 border-[#b45309] rounded-2xl p-4 flex flex-col items-center">
-                <img
-                  src={cannonImg}
-                  alt="Cannon Level"
-                  referrerPolicy="no-referrer"
-                  className="w-32 h-32 object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-                />
-                <div className="text-lg font-serif font-black text-[#fbbf24] mt-2">
-                  Level {cannonLevel} Heavy Cannon
+            <div className="space-y-4">
+              <div className="bg-[#451a03] p-3 rounded-xl border border-[#b45309] flex justify-between items-center shadow-inner">
+                <div className="text-sm font-bold text-[#fbbf24]">
+                  Equipped: {equippedCannons.length} / 6
                 </div>
-                <div className="text-xs text-[#fde68a]/80 font-mono mt-1">
-                  Base Damage: <span className="font-bold text-white">{(2500 + (cannonLevel - 1) * 2500).toLocaleString()}</span> • Equipped: <span className="font-bold text-[#fbbf24]">{cannonCount} Cannons</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {/* Buy New Cannon */}
                 <button
                   onClick={buyCannon}
-                  disabled={cannonCount >= 6 || coins < cannonBuyCost}
-                  className={`p-3 rounded-xl font-black text-xs uppercase italic flex flex-col items-center justify-center gap-1 border-b-4 border-r-2 shadow-lg ${
-                    cannonCount >= 6 || coins < cannonBuyCost
+                  disabled={coins < cannonBuyCost}
+                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase italic flex items-center gap-1 border-b-2 shadow-lg ${
+                    coins < cannonBuyCost
                       ? 'bg-stone-900 border-[#451a03] text-stone-500 cursor-not-allowed'
                       : 'bg-[#1d4ed8] hover:bg-[#2563eb] border-[#1e3a8a] text-white active:translate-y-1'
                   }`}
                 >
-                  <Plus className="w-4 h-4 text-[#facc15]" />
-                  <span>Buy Extra Cannon</span>
-                  <span className="text-[10px] text-[#fde68a] font-normal">Cost: 100 Coins</span>
+                  <Plus className="w-3 h-3 text-[#facc15]" />
+                  <span>Buy New (100 Coins)</span>
                 </button>
+              </div>
 
-                {/* Upgrade Cannon Level */}
-                <button
-                  onClick={upgradeCannon}
-                  disabled={cannonLevel >= 10 || coins < cannonUpgradeCost}
-                  className={`p-3 rounded-xl font-black text-xs uppercase italic flex flex-col items-center justify-center gap-1 border-b-4 border-r-2 shadow-lg ${
-                    cannonLevel >= 10 || coins < cannonUpgradeCost
-                      ? 'bg-stone-900 border-[#451a03] text-stone-500 cursor-not-allowed'
-                      : 'bg-[#b45309] hover:bg-[#d97706] border-[#451a03] text-white active:translate-y-1'
-                  }`}
-                >
-                  <ArrowUp className="w-4 h-4" />
-                  <span>Upgrade Cannon Lv</span>
-                  <span className="text-[10px] text-[#fde68a] font-bold">Cost: 100 Coins (+2.5k Dmg)</span>
-                </button>
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                {ownedCannons.map((cannon, index) => {
+                  const isEquipped = equippedCannons.includes(cannon.id);
+                  const dmg = 2500 + (cannon.level - 1) * 2500;
+                  return (
+                    <div key={cannon.id} className="bg-[#451a03] border-2 border-[#b45309] rounded-xl p-2 flex items-center gap-3">
+                      <div className="bg-[#78350f] rounded-lg p-1 border border-[#b45309] flex-shrink-0 relative">
+                        <ItemImg
+                          src={getCannonImageForLevel(cannon.level)}
+                          alt={`Cannon ${cannon.level}`}
+                          className="w-12 h-12 object-contain"
+                        />
+                        {isEquipped && (
+                          <div className="absolute -top-1 -right-1 bg-green-500 w-3 h-3 rounded-full border border-white"></div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 text-left">
+                        <div className="font-bold text-[#fbbf24] text-sm">Cannon #{index + 1} (Lv.{cannon.level})</div>
+                        <div className="text-[10px] font-mono text-[#fde68a]/70">Dmg: {dmg.toLocaleString()}</div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 w-24 flex-shrink-0">
+                        {isEquipped ? (
+                          <button
+                            onClick={() => unequipCannon(cannon.id)}
+                            className="py-1 rounded bg-stone-700 hover:bg-stone-600 text-white font-bold text-[10px] border-b-2 border-stone-800"
+                          >
+                            Unequip
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => equipCannon(cannon.id)}
+                            disabled={equippedCannons.length >= 6}
+                            className={`py-1 rounded font-bold text-[10px] border-b-2 ${
+                              equippedCannons.length >= 6 
+                                ? 'bg-stone-800 text-stone-500 border-[#451a03] cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-500 text-white border-green-800'
+                            }`}
+                          >
+                            Equip
+                          </button>
+                        )}
+                        <button
+                          onClick={() => upgradeCannon(cannon.id)}
+                          disabled={cannon.level >= 10 || coins < cannonUpgradeCost}
+                          className={`py-1 rounded font-bold text-[10px] border-b-2 flex items-center justify-center gap-1 ${
+                            cannon.level >= 10 || coins < cannonUpgradeCost
+                              ? 'bg-stone-800 text-stone-500 border-[#451a03] cursor-not-allowed'
+                              : 'bg-[#b45309] hover:bg-[#d97706] text-white border-[#78350f]'
+                          }`}
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                          <span>UPG 100</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <p className="text-[10px] text-[#fde68a]/80 font-mono text-left bg-[#451a03] p-3 rounded-xl border border-[#b45309]">
@@ -212,42 +258,84 @@ export const UpgradesModal: React.FC<UpgradesModalProps> = ({ onClose }) => {
 
           {/* SHIELD TAB */}
           {activeTab === 'shield' && (
-            <div className="space-y-4 text-center">
-              <div className="bg-[#451a03] border-4 border-[#b45309] rounded-2xl p-4 flex flex-col items-center">
-                <img
-                  src={shieldImg}
-                  alt="Shield Level"
-                  referrerPolicy="no-referrer"
-                  className="w-32 h-32 object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-                />
-                <div className="text-lg font-serif font-black text-[#fbbf24] mt-2">
-                  {shieldLevel === 0 ? 'No Shield Equipped' : `Level ${shieldLevel} Captain Shield`}
+            <div className="space-y-4">
+              <div className="bg-[#451a03] p-3 rounded-xl border border-[#b45309] flex justify-between items-center shadow-inner">
+                <div className="text-sm font-bold text-[#fbbf24]">
+                  Equipped: {equippedShield ? '1' : '0'} / 1
                 </div>
-                <div className="text-xs text-[#fde68a]/80 font-mono mt-1">
-                  Protects from equipment loss 1 - 3 times during enemy raids.
-                </div>
+                <button
+                  onClick={buyShield}
+                  disabled={coins < shieldUpgradeCost}
+                  className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase italic flex items-center gap-1 border-b-2 shadow-lg ${
+                    coins < shieldUpgradeCost
+                      ? 'bg-stone-900 border-[#451a03] text-stone-500 cursor-not-allowed'
+                      : 'bg-[#1d4ed8] hover:bg-[#2563eb] border-[#1e3a8a] text-white active:translate-y-1'
+                  }`}
+                >
+                  <Plus className="w-3 h-3 text-[#facc15]" />
+                  <span>Buy Shield (100 Coins)</span>
+                </button>
               </div>
 
-              <button
-                onClick={upgradeShield}
-                disabled={shieldLevel >= 3 || coins < shieldUpgradeCost}
-                className={`w-full py-3.5 rounded-xl font-black text-sm uppercase italic tracking-wider flex items-center justify-center gap-2 border-b-4 border-r-2 shadow-xl ${
-                  shieldLevel >= 3
-                    ? 'bg-stone-800 border-[#451a03] text-stone-500 cursor-not-allowed'
-                    : coins < shieldUpgradeCost
-                    ? 'bg-[#451a03] border-[#78350f] text-stone-400 cursor-not-allowed'
-                    : 'bg-[#b45309] hover:bg-[#d97706] border-[#451a03] text-white active:translate-y-1'
-                }`}
-              >
-                <ArrowUp className="w-4 h-4" />
-                <span>
-                  {shieldLevel >= 3
-                    ? 'MAX SHIELD LEVEL (3)'
-                    : shieldLevel === 0
-                    ? 'Buy Shield (100 Coins)'
-                    : `Upgrade Shield Lv.${shieldLevel + 1} (100 Coins)`}
-                </span>
-              </button>
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                {ownedShields.length === 0 && (
+                  <div className="text-center text-sm font-mono text-[#fde68a]/70 p-4">
+                    You don't own any shields yet.
+                  </div>
+                )}
+                {ownedShields.map((shield, index) => {
+                  const isEquipped = equippedShield === shield.id;
+                  return (
+                    <div key={shield.id} className="bg-[#451a03] border-2 border-[#b45309] rounded-xl p-2 flex items-center gap-3">
+                      <div className="bg-[#78350f] rounded-lg p-1 border border-[#b45309] flex-shrink-0 relative">
+                        <ItemImg
+                          src={getShieldImageForLevel(shield.level)}
+                          alt={`Shield ${shield.level}`}
+                          className="w-12 h-12 object-contain"
+                        />
+                        {isEquipped && (
+                          <div className="absolute -top-1 -right-1 bg-green-500 w-3 h-3 rounded-full border border-white"></div>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 text-left">
+                        <div className="font-bold text-[#fbbf24] text-sm">Shield #{index + 1} (Lv.{shield.level})</div>
+                        <div className="text-[10px] font-mono text-[#fde68a]/70">Charges: {shield.level}</div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 w-24 flex-shrink-0">
+                        {isEquipped ? (
+                          <button
+                            onClick={() => unequipShield()}
+                            className="py-1 rounded bg-stone-700 hover:bg-stone-600 text-white font-bold text-[10px] border-b-2 border-stone-800"
+                          >
+                            Unequip
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => equipShield(shield.id)}
+                            className="py-1 rounded bg-green-600 hover:bg-green-500 text-white font-bold text-[10px] border-b-2 border-green-800"
+                          >
+                            Equip
+                          </button>
+                        )}
+                        <button
+                          onClick={() => upgradeShield(shield.id)}
+                          disabled={shield.level >= 3 || coins < shieldUpgradeCost}
+                          className={`py-1 rounded font-bold text-[10px] border-b-2 flex items-center justify-center gap-1 ${
+                            shield.level >= 3 || coins < shieldUpgradeCost
+                              ? 'bg-stone-800 text-stone-500 border-[#451a03] cursor-not-allowed'
+                              : 'bg-[#b45309] hover:bg-[#d97706] text-white border-[#78350f]'
+                          }`}
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                          <span>UPG 100</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

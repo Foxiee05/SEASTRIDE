@@ -17,20 +17,11 @@ export interface StepStats {
 export interface CannonItem {
   id: string;
   level: number; // 1 to 10
-  damage: number; // base 2500 + 2500 per level
 }
 
-export interface ShipData {
-  level: number; // 1 to 10
-  hp: number; // current HP
-  maxHp: number; // base 5000 + 5000 per level
-  conditionPercent: number; // 0% to 100%
-  equippedDecorations: string[];
-}
-
-export interface ShieldData {
-  level: number; // 0 = none, 1 to 3
-  avoidanceCount: number; // 1 to 3 times avoidance
+export interface ShieldItem {
+  id: string;
+  level: number; // 1 to 3
 }
 
 export interface Player {
@@ -42,11 +33,12 @@ export interface Player {
   shipCondition: number; // %
   currentHp: number;
   maxHp: number;
-  cannonLevel: number;
-  cannonCount: number;
-  shieldLevel: number;
+  cannonLevel: number; // We might want to remove this and replace with total damage, but let's just keep as average or max for display.
+  cannonCount: number; // For backward compatibility in Player type if needed, or update to show damage.
+  shieldLevel: number; 
   isOnline: boolean;
 }
+
 
 export interface ServerInfo {
   code: string;

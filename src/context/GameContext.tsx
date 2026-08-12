@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Player, ServerInfo, BattleResult, RaidLog, StepRecord, StepStats } from '../types';
+import { Player, ServerInfo, BattleResult, RaidLog, StepRecord, StepStats, CannonItem, ShieldItem } from '../types';
 import { INITIAL_SERVERS } from '../data/mockPlayers';
 import { soundFx } from '../utils/audio';
 
@@ -28,9 +28,15 @@ interface GameContextType {
   shipCurrentHp: number;
   
   // Equipment
-  cannonLevel: number; // 1 - 10
-  cannonCount: number; // 1 - 6
-  shieldLevel: number; // 0 - 3
+  ownedCannons: CannonItem[];
+  equippedCannons: string[];
+  ownedShields: ShieldItem[];
+  equippedShield: string | null;
+  
+  // Computed (kept for compatibility)
+  cannonLevel: number; 
+  cannonCount: number; 
+  shieldLevel: number; 
   shieldCharges: number;
   
   // Customization
@@ -56,9 +62,18 @@ interface GameContextType {
   repairShip: (percentToRepair: number) => boolean;
   rebuildShip: () => boolean;
   upgradeShip: () => boolean;
-  upgradeCannon: () => boolean;
+  
+  // Individual item actions
   buyCannon: () => boolean;
-  upgradeShield: () => boolean;
+  upgradeCannon: (id: string) => boolean;
+  equipCannon: (id: string) => void;
+  unequipCannon: (id: string) => void;
+  
+  buyShield: () => boolean;
+  upgradeShield: (id: string) => boolean;
+  equipShield: (id: string) => void;
+  unequipShield: () => void;
+  
   buyDecoration: (decId: string, currency: 'coins' | 'gems', price: number) => boolean;
   toggleEquipDecoration: (decId: string) => void;
   watchAdForGems: () => void;
@@ -106,10 +121,31 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [shipCondition, setShipCondition] = useState<number>(95);
   
   // Equipment
-  const [cannonLevel, setCannonLevel] = useState<number>(1);
-  const [cannonCount, setCannonCount] = useState<number>(1);
-  const [shieldLevel, setShieldLevel] = useState<number>(0);
+  const [ownedCannons, setOwnedCannons] = useState<CannonItem[]>([{ id: 'c_1', level: 1 }]);
+  const [equippedCannons, setEquippedCannons] = useState<string[]>(['c_1']);
+  const [ownedShields, setOwnedShields] = useState<ShieldItem[]>([]);
+  const [equippedShield, setEquippedShield] = useState<string | null>(null);
+
+  // Computed values for backward compatibility
+  const cannonCount = equippedCannons.length;
+  const cannonLevel = equippedCannons.length > 0 
+    ? Math.max(...equippedCannons.map(id => ownedCannons.find(c => c.id === id)?.level || 1)) 
+    : 1;
+    
+  const activeShield = equippedShield ? ownedShields.find(s => s.id === equippedShield) : null;
+  const shieldLevel = activeShield ? activeShield.level : 0;
+  
+  // We'll keep shieldCharges as state, but reset it if shield changes
   const [shieldCharges, setShieldCharges] = useState<number>(0);
+  
+  // Refill shield charges when equipping a new shield
+  useEffect(() => {
+    if (activeShield) {
+      setShieldCharges(activeShield.level);
+    } else {
+      setShieldCharges(0);
+    }
+  }, [equippedShield, activeShield?.level]);
 
   // Customization
   const [ownedDecorations, setOwnedDecorations] = useState<string[]>(['dec_jolly_roger']);
@@ -251,8 +287,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEnergy(e => e - 1);
     soundFx.playCannonBomb();
 
-    // Damage calculation: base 2500 * level * count * condition factor
-    const baseDamage = (2500 + (cannonLevel - 1) * 2500) * cannonCount;
+    // Damage calculation: sum of equipped cannons' damage * condition factor
+    const baseDamage = equippedCannons.reduce((sum, id) => {
+      const c = ownedCannons.find(x => x.id === id);
+      return sum + (c ? 2500 + (c.level - 1) * 2500 : 0);
+    }, 0);
     const actualDamage = Math.round(baseDamage * (shipCondition / 100));
 
     // Target HP logic
@@ -372,24 +411,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Buy or Upgrade Cannons: 100 coins to buy/upgrade
   const buyCannon = (): boolean => {
-    if (cannonCount >= 6) {
-      alert('Maximum cannons equipped (6)! Upgrade your cannon level instead.');
-      return false;
-    }
     if (coins < 100) {
       alert('Not enough coins! Cannons cost 100 coins.');
       return false;
     }
 
     setCoins(c => c - 100);
-    setCannonCount(c => c + 1);
+    const newId = `c_${Date.now()}`;
+    setOwnedCannons(prev => [...prev, { id: newId, level: 1 }]);
+    // Auto equip if space available
+    if (equippedCannons.length < 6) {
+      setEquippedCannons(prev => [...prev, newId]);
+    }
     soundFx.playUpgrade();
     return true;
   };
 
-  const upgradeCannon = (): boolean => {
-    if (cannonLevel >= 10) {
-      alert('Cannons are at maximum level (10)!');
+  const upgradeCannon = (id: string): boolean => {
+    const cannon = ownedCannons.find(c => c.id === id);
+    if (!cannon) return false;
+    
+    if (cannon.level >= 10) {
+      alert('Cannon is at maximum level (10)!');
       return false;
     }
     if (coins < 100) {
@@ -398,14 +441,46 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCoins(c => c - 100);
-    setCannonLevel(l => l + 1);
+    setOwnedCannons(prev => prev.map(c => c.id === id ? { ...c, level: c.level + 1 } : c));
+    soundFx.playUpgrade();
+    return true;
+  };
+  
+  const equipCannon = (id: string) => {
+    if (equippedCannons.includes(id)) return;
+    if (equippedCannons.length >= 6) {
+      alert('Maximum cannons equipped (6)! Unequip one first.');
+      return;
+    }
+    setEquippedCannons(prev => [...prev, id]);
+    soundFx.playClick();
+  };
+  
+  const unequipCannon = (id: string) => {
+    setEquippedCannons(prev => prev.filter(c => c !== id));
+    soundFx.playClick();
+  };
+
+  // Shield: Lv 1-3, 100 coins to buy/upgrade
+  const buyShield = (): boolean => {
+    if (coins < 100) {
+      alert('Not enough coins! Shield costs 100 coins.');
+      return false;
+    }
+    setCoins(c => c - 100);
+    const newId = `s_${Date.now()}`;
+    setOwnedShields(prev => [...prev, { id: newId, level: 1 }]);
+    if (!equippedShield) {
+      setEquippedShield(newId);
+    }
     soundFx.playUpgrade();
     return true;
   };
 
-  // Shield: Lv 1-3, 100 coins to buy/upgrade
-  const upgradeShield = (): boolean => {
-    if (shieldLevel >= 3) {
+  const upgradeShield = (id: string): boolean => {
+    const shield = ownedShields.find(s => s.id === id);
+    if (!shield) return false;
+    if (shield.level >= 3) {
       alert('Shield is at max level (3)!');
       return false;
     }
@@ -415,10 +490,23 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCoins(c => c - 100);
-    setShieldLevel(l => l + 1);
-    setShieldCharges(l => l + 1);
+    setOwnedShields(prev => prev.map(s => s.id === id ? { ...s, level: s.level + 1 } : s));
+    // If it's equipped, refill charges
+    if (equippedShield === id) {
+      setShieldCharges(shield.level + 1);
+    }
     soundFx.playUpgrade();
     return true;
+  };
+  
+  const equipShield = (id: string) => {
+    setEquippedShield(id);
+    soundFx.playClick();
+  };
+  
+  const unequipShield = () => {
+    setEquippedShield(null);
+    soundFx.playClick();
   };
 
   // Shop Decor Purchase
@@ -475,6 +563,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         shipCondition,
         shipMaxHp,
         shipCurrentHp,
+        ownedCannons,
+        equippedCannons,
+        ownedShields,
+        equippedShield,
         cannonLevel,
         cannonCount,
         shieldLevel,
@@ -495,9 +587,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         repairShip,
         rebuildShip,
         upgradeShip,
-        upgradeCannon,
         buyCannon,
+        upgradeCannon,
+        equipCannon,
+        unequipCannon,
+        buyShield,
         upgradeShield,
+        equipShield,
+        unequipShield,
         buyDecoration,
         toggleEquipDecoration,
         watchAdForGems,
