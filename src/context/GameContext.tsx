@@ -324,7 +324,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const lootChance = Math.random();
       if (lootChance <= 0.6) {
         cannonLooted = true;
-        setCannonCount(c => Math.min(6, c + 1));
+        const newId = `c_${Date.now()}`;
+        setOwnedCannons(prev => [...prev, { id: newId, level: 1 }]);
+        setEquippedCannons(prev => prev.length < 6 ? [...prev, newId] : prev);
       }
     }
 

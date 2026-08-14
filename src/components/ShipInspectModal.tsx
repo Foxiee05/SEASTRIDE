@@ -21,7 +21,7 @@ export const ShipInspectModal: React.FC<ShipInspectModalProps> = ({ onClose, onO
     shieldLevel,
   } = useGame();
 
-  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel), { mode: 'edge' });
+  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel), { mode: 'edge', keepInternalGreenAsBlack: shipLevel === 1 });
   const cannonImg = useCutoutImage(getCannonImageForLevel(cannonLevel));
   const shieldImg = useCutoutImage(getShieldImageForLevel(shieldLevel));
 

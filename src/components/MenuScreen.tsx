@@ -8,9 +8,10 @@ import { useGame } from '../context/GameContext';
 interface MenuScreenProps {
   onSelectSteps: () => void;
   onSelectGame: () => void;
+  onSelectLeaderboard: () => void;
 }
 
-export function MenuScreen({ onSelectSteps, onSelectGame }: MenuScreenProps) {
+export function MenuScreen({ onSelectSteps, onSelectGame, onSelectLeaderboard }: MenuScreenProps) {
   const transparentLogo = useCutoutImage(ASSETS.logo, { mode: 'edge' });
   const { isMuted, toggleMute } = useGame();
 
@@ -87,6 +88,23 @@ export function MenuScreen({ onSelectSteps, onSelectGame }: MenuScreenProps) {
                 <span className="text-2xl sm:text-3xl drop-shadow-md">🏴‍☠️</span>
                 <span className="font-black text-white text-xl sm:text-2xl tracking-wider drop-shadow-md uppercase">
                   Gameplay
+                </span>
+              </div>
+            </div>
+          </button>
+
+          {/* Leaderboard Button */}
+          <button 
+            onClick={onSelectLeaderboard}
+            className="w-full relative group active:scale-95 transition-transform"
+          >
+            <div className="absolute inset-0 bg-[#312e81] rounded-xl translate-y-1 sm:translate-y-2"></div>
+            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#6366f1] to-[#4338ca] rounded-xl border-2 border-[#e0e7ff] flex flex-col items-center justify-center shadow-lg overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-30 mix-blend-overlay"></div>
+              <div className="flex items-center justify-center gap-3 z-10">
+                <span className="text-2xl sm:text-3xl drop-shadow-md">🏆</span>
+                <span className="font-black text-white text-xl sm:text-2xl tracking-wider drop-shadow-md uppercase">
+                  Leaderboard
                 </span>
               </div>
             </div>

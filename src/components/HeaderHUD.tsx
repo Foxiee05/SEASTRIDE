@@ -1,14 +1,16 @@
 import React from 'react';
 import { useGame } from '../context/GameContext';
-import { Volume2, VolumeX, Shield, Zap, Globe, Lock } from 'lucide-react';
+import { Volume2, VolumeX, Shield, Zap, Globe, Lock, CircleDollarSign, Gem } from 'lucide-react';
+import { BackToSeaStride } from './BackToSeaStride';
 
 interface HeaderHUDProps {
   activeTab: 'home' | 'game';
   setActiveTab: (tab: 'home' | 'game') => void;
   openModal: (modal: 'upgrades' | 'shop' | 'server' | 'repair' | 'raids' | 'profile') => void;
+  onBackToMenu: () => void;
 }
 
-export const HeaderHUD: React.FC<HeaderHUDProps> = ({ activeTab, setActiveTab, openModal }) => {
+export const HeaderHUD: React.FC<HeaderHUDProps> = ({ activeTab, setActiveTab, openModal, onBackToMenu }) => {
   const { coins, gems, energy, maxEnergy, currentServer, isMuted, toggleMute, shipCondition, profile } = useGame();
 
   return (
@@ -17,6 +19,7 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ activeTab, setActiveTab, o
       <div className="px-2 sm:px-3 py-1.5 flex items-center justify-center sm:justify-between gap-1.5 max-w-4xl mx-auto flex-wrap">
         {/* Logo / Badge & Currencies */}
         <div className="flex items-center justify-center gap-1.5 flex-wrap">
+          <BackToSeaStride onClick={onBackToMenu} />
           {/* Captain Emblem Profile Circle Button */}
           <button
             onClick={() => openModal('profile')}
@@ -36,21 +39,15 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ activeTab, setActiveTab, o
           </button>
 
           {/* Gold Coins */}
-          <div className="flex items-center bg-[#78350f] border-2 border-[#b45309] rounded-lg px-2 sm:px-3 py-0.5 sm:py-1 shadow-md">
-            <span className="text-sm sm:text-lg mr-1 animate-pulse">🪙</span>
-            <div className="flex flex-col">
-              <span className="text-[9px] sm:text-[10px] text-[#fde68a] uppercase font-bold leading-none">GOLD</span>
-              <span className="text-[#fbbf24] text-xs sm:text-sm font-bold tracking-wide">{coins.toLocaleString()}</span>
-            </div>
+          <div className="flex items-center justify-center gap-1.5 bg-[#2e1204] border-2 border-[#451a03] rounded-full px-3 py-1 sm:px-4 sm:py-1.5 shadow-sm">
+            <CircleDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#facc15]" />
+            <span className="text-[#facc15] font-serif font-bold text-sm sm:text-base leading-none tracking-wide">{coins.toLocaleString()}</span>
           </div>
 
           {/* Gems / Steps Badge */}
-          <div className="flex items-center bg-[#1e1b4b] border-2 border-[#4338ca] rounded-lg px-2 sm:px-3 py-0.5 sm:py-1 shadow-md">
-            <span className="text-sm sm:text-lg mr-1">💎</span>
-            <div className="flex flex-col">
-              <span className="text-[9px] sm:text-[10px] text-[#818cf8] uppercase font-bold leading-none">GEMS</span>
-              <span className="text-white text-xs sm:text-sm font-bold tracking-wide">{gems}</span>
-            </div>
+          <div className="flex items-center justify-center gap-1.5 bg-[#172554] border-2 border-[#1e3a8a] rounded-full px-3 py-1 sm:px-4 sm:py-1.5 shadow-sm">
+            <Gem className="w-4 h-4 sm:w-5 sm:h-5 text-[#93c5fd]" />
+            <span className="text-white font-serif font-bold text-sm sm:text-base leading-none tracking-wide">{gems}</span>
           </div>
         </div>
 

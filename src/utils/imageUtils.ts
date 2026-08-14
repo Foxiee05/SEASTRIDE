@@ -8,11 +8,12 @@ const transparentCache = new Map<string, string>();
  */
 export function processCutoutImage(
   src: string,
-  options: { threshold?: number; mode?: 'white' | 'edge' } = {}
+  options: { threshold?: number; mode?: 'white' | 'edge'; keepInternalGreenAsBlack?: boolean } = {}
 ): Promise<string> {
   const threshold = options.threshold ?? 220;
   const mode = options.mode ?? 'white';
-  const cacheKey = `${src}_${mode}_${threshold}`;
+  const keepInternalGreenAsBlack = options.keepInternalGreenAsBlack ?? true;
+  const cacheKey = `${src}_${mode}_${threshold}_${keepInternalGreenAsBlack}`;
 
   if (transparentCache.has(cacheKey)) {
     return Promise.resolve(transparentCache.get(cacheKey)!);
@@ -138,11 +139,15 @@ export function processCutoutImage(
             } else {
               // Inside the asset
               if (g > r + 15 && g > b + 15) {
-                // Internal green (like the skull logo on level 1 sail) -> fill with black
-                data[i] = 15;
-                data[i + 1] = 15;
-                data[i + 2] = 15;
-                data[i + 3] = 255;
+                if (keepInternalGreenAsBlack) {
+                  // Internal green (like the skull logo on level 1 sail) -> fill with black
+                  data[i] = 15;
+                  data[i + 1] = 15;
+                  data[i + 2] = 15;
+                  data[i + 3] = 255;
+                } else {
+                  data[i + 3] = 0; // Make internal transparent areas truly transparent
+                }
               } else {
                 data[i + 3] = 255; // Solid opaque asset
               }
@@ -188,9 +193,9 @@ export function processCutoutImage(
  */
 export function useCutoutImage(
   src: string,
-  options: { threshold?: number; mode?: 'white' | 'edge' } = {}
+  options: { threshold?: number; mode?: 'white' | 'edge'; keepInternalGreenAsBlack?: boolean } = {}
 ): string {
-  const cacheKey = `${src}_${options.mode || 'white'}_${options.threshold || 220}`;
+  const cacheKey = `${src}_${options.mode || 'white'}_${options.threshold || 220}_${options.keepInternalGreenAsBlack ?? true}`;
   const [cutoutUrl, setCutoutUrl] = useState<string>(transparentCache.get(cacheKey) || src);
 
   useEffect(() => {
@@ -215,10 +220,10 @@ export function useCutoutImage(
 /**
  * Pre-warm cutout processing for a list of image URLs.
  */
-export function preloadCutouts(srcs: string[], options: { threshold?: number; mode?: 'white' | 'edge' } = {}): void {
+export function preloadCutouts(srcs: string[], options: { threshold?: number; mode?: 'white' | 'edge'; keepInternalGreenAsBlack?: boolean } = {}): void {
   srcs.forEach((src) => {
     if (src) {
-      const cacheKey = `${src}_${options.mode || 'white'}_${options.threshold || 220}`;
+      const cacheKey = `${src}_${options.mode || 'white'}_${options.threshold || 220}_${options.keepInternalGreenAsBlack ?? true}`;
       if (!transparentCache.has(cacheKey)) {
         processCutoutImage(src, options);
       }

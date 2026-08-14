@@ -39,7 +39,7 @@ export const UpgradesModal: React.FC<UpgradesModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<'ship' | 'cannons' | 'shield'>('ship');
 
   // Cutout images for 100% opaque render without translucent background
-  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel), { mode: 'edge' });
+  const shipImg = useCutoutImage(getShipImageForLevel(shipLevel), { mode: 'edge', keepInternalGreenAsBlack: shipLevel === 1 });
   const cannonImg = useCutoutImage(getCannonImageForLevel(cannonLevel));
   const shieldImg = useCutoutImage(getShieldImageForLevel(shieldLevel));
 

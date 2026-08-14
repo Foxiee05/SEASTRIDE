@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
-import { Footprints, Activity, Flame, Award, Zap, Compass } from 'lucide-react';
+import { Footprints, CircleDollarSign, Flame, Compass, ChevronRight, Route, Timer, Swords, Calendar, TrendingUp, Shield, Map as MapIcon, BarChart3 } from 'lucide-react';
 import { usePedometer } from '../hooks/usePedometer';
+import { StepMapView } from './StepMapView';
 
 export const HomeScreen: React.FC = () => {
-  const { totalStepsToday, stepRecords, stepStats, addSteps } = useGame();
+  const { totalStepsToday, addSteps, shipLevel, profile, stepRecords, stepStats } = useGame();
+  
+  const [activeTab, setActiveTab] = useState<'map' | 'chart'>('map');
   const [chartMode, setChartMode] = useState<'day' | 'week' | 'month'>('week');
-
-  // Integrated Pedometer Sensor Hook
-  const { permissionStatus, requestPermission } = usePedometer({
-    onStep: (count) => {
-      addSteps(count);
-    },
-  });
 
   // Chart data calculation
   const dayData = [
@@ -39,9 +35,28 @@ export const HomeScreen: React.FC = () => {
   const activeChart = chartMode === 'day' ? dayData : chartMode === 'week' ? weekData : monthData;
   const maxChartSteps = Math.max(...activeChart.map(d => d.steps), 1000);
 
+
+  // Integrated Pedometer Sensor Hook
+  const { permissionStatus, requestPermission } = usePedometer({
+    onStep: (count) => {
+      addSteps(count);
+    },
+  });
+
   // Calculate calories burned & distance approx
   const caloriesBurned = Math.round(totalStepsToday * 0.04);
-  const distanceKm = (totalStepsToday * 0.0008).toFixed(2);
+  const distanceKm = (totalStepsToday * 0.0008).toFixed(1);
+  const activeTimeMin = Math.round(totalStepsToday * 0.012);
+  const goldEarnedToday = Math.floor(totalStepsToday / 100) * 10;
+  
+  // Mock weekly statistics based on requirements
+  const weeklyDistanceKm = 18.6;
+  const weeklyGoldEarned = 1450;
+  const weeklyDistanceGoal = 25;
+
+  const currentXp = totalStepsToday % 500;
+  const maxXp = 500;
+  const displayLevel = shipLevel || 4;
 
   // If user hasn't granted motion pedometer permission yet, show permission prompt box only
   if (permissionStatus !== 'granted') {
@@ -78,128 +93,255 @@ export const HomeScreen: React.FC = () => {
     );
   }
 
+  // Circular progress calculation
+  const circleRadius = 110;
+  const circleCircumference = 2 * Math.PI * circleRadius;
+  const stepGoal = 10000;
+  const progressOffset = circleCircumference - (circleCircumference * Math.min(totalStepsToday, stepGoal)) / stepGoal;
+
   return (
-    <div className="p-2 sm:p-4 max-w-2xl mx-auto space-y-2 sm:space-y-4 text-amber-100 pb-2 select-none flex-1 flex flex-col justify-between">
-      {/* Pirate Parchment Main Banner */}
-      <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-xl relative overflow-hidden">
-        {/* Decorative corner skulls */}
-        <div className="absolute top-1.5 left-2 text-sm sm:text-xl opacity-40">☠️</div>
-        <div className="absolute top-1.5 right-2 text-sm sm:text-xl opacity-40">☠️</div>
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto text-amber-100 select-none flex-1 flex flex-col w-full font-serif">
+      
+      {/* Header section */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <p className="text-amber-100/70 text-sm font-medium">Welcome back</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-amber-100 mt-0.5">{profile?.username || 'Wanderer'}</h1>
+        </div>
+        <div className="flex items-center gap-1.5 bg-[#451a03] border-2 border-[#b45309] rounded-full px-3 py-1.5 shadow-md">
+          <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 fill-orange-500" />
+          <span className="text-sm sm:text-base font-bold text-amber-100">5 Days</span>
+        </div>
+      </div>
 
-        <div className="text-center space-y-0.5 sm:space-y-1">
-          <div className="inline-flex items-center gap-1 bg-[#451a03] px-2.5 py-0.5 rounded-full border border-[#b45309] text-[#fde68a] text-[10px] sm:text-xs font-serif font-black uppercase tracking-widest shadow-inner">
-            <Footprints className="w-3.5 h-3.5 text-[#facc15]" />
-            <span>Today's SeaStride Walk</span>
-          </div>
+      {/* Level & XP Progress Card */}
+      <div className="bg-[#78350f]/40 border border-[#b45309]/50 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
+        <div className="flex justify-between items-center mb-3">
+          <span className="font-extrabold text-amber-100 tracking-wider text-sm sm:text-base uppercase">LEVEL {displayLevel}</span>
+          <span className="text-sm font-bold text-[#fde68a]">{currentXp} / {maxXp} XP</span>
+        </div>
+        <div className="w-full bg-[#1c0a02]/60 h-2 sm:h-2.5 rounded-full overflow-hidden border border-[#451a03]">
+          <div 
+             className="bg-[#16a34a] h-full shadow-[0_0_10px_#16a34a] transition-all duration-500 rounded-full"
+             style={{ width: `${(currentXp / maxXp) * 100}%` }} 
+           />
+        </div>
+      </div>
 
-          <div className="py-1">
-            <span className="text-3xl sm:text-5xl font-black font-mono tracking-tight text-[#fbbf24] drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)]">
+      {/* Steps Circle Hero */}
+      <div className="flex justify-center mb-10 sm:mb-12 relative">
+        <div className="relative w-64 h-64 sm:w-72 sm:h-72">
+          <svg viewBox="0 0 256 256" className="w-full h-full transform -rotate-90 filter drop-shadow-xl">
+            <circle 
+              cx="128" 
+              cy="128" 
+              r={circleRadius} 
+              stroke="#1c0a02" 
+              strokeWidth="16" 
+              fill="transparent" 
+            />
+            <circle 
+              cx="128" 
+              cy="128" 
+              r={circleRadius} 
+              stroke="#16a34a" 
+              strokeWidth="16" 
+              fill="transparent" 
+              strokeDasharray={circleCircumference} 
+              strokeDashoffset={progressOffset} 
+              strokeLinecap="round" 
+              className="transition-all duration-1000 ease-out"
+            />
+          </svg>
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <Footprints className="w-8 h-8 sm:w-10 sm:h-10 text-[#facc15] mb-2 sm:mb-3 opacity-90" />
+            <span className="text-5xl sm:text-6xl font-black text-[#fbbf24] tracking-tight drop-shadow-lg">
               {totalStepsToday.toLocaleString()}
             </span>
-            <span className="text-[10px] sm:text-xs font-bold text-[#fde68a] uppercase ml-1.5">Steps</span>
-          </div>
-
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-            <div className="bg-[#451a03] border border-[#b45309] rounded-lg sm:rounded-xl p-1.5 sm:p-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-red-400 text-[10px] sm:text-xs font-extrabold">
-                <Flame className="w-3 h-3" />
-                <span>BURNT</span>
-              </div>
-              <div className="text-xs sm:text-base font-extrabold text-white mt-0.5">{caloriesBurned} kcal</div>
-            </div>
-
-            <div className="bg-[#451a03] border border-[#b45309] rounded-lg sm:rounded-xl p-1.5 sm:p-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-sky-400 text-[10px] sm:text-xs font-extrabold">
-                <Activity className="w-3 h-3" />
-                <span>DISTANCE</span>
-              </div>
-              <div className="text-xs sm:text-base font-extrabold text-white mt-0.5">{distanceKm} km</div>
-            </div>
-
-            <div className="bg-[#451a03] border border-[#b45309] rounded-lg sm:rounded-xl p-1.5 sm:p-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-[#facc15] text-[10px] sm:text-xs font-extrabold">
-                <Award className="w-3 h-3" />
-                <span>COINS</span>
-              </div>
-              <div className="text-xs sm:text-base font-extrabold text-[#fbbf24] mt-0.5">
-                +{Math.floor(totalStepsToday / 100) * 10} 🪙
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Steps Bar Reward Gauge (Every 100 steps = 10 coins) */}
-        <div className="mt-2 bg-[#451a03] border border-[#b45309] rounded-lg p-2 shadow-inner">
-          <div className="flex justify-between items-center text-[10px] sm:text-xs font-serif font-black text-[#fde68a] mb-1">
-            <span className="flex items-center gap-1">
-              <Zap className="w-3 h-3 text-[#facc15] fill-[#facc15]" />
-              <span>Next Gold Reward Meter</span>
-            </span>
-            <span className="text-[#fbbf24]">{100 - stepStats.stepsToNextReward} / 100 steps</span>
-          </div>
-
-          <div className="w-full bg-[#1c0a02] h-3.5 sm:h-4 rounded-full border border-[#78350f] overflow-hidden relative">
-            <div
-              className="h-full bg-[#16a34a] rounded-full shadow-[0_0_10px_#16a34a] transition-all duration-300"
-              style={{ width: `${((100 - stepStats.stepsToNextReward) / 100) * 100}%` }}
-            />
-            <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black text-white uppercase tracking-widest drop-shadow">
-              Walk {stepStats.stepsToNextReward} more steps for +10 Gold Coins!
-            </span>
+            <span className="text-sm sm:text-base font-bold text-[#fde68a] mt-2 uppercase tracking-widest opacity-80">Goal: 10,000</span>
           </div>
         </div>
       </div>
 
-      {/* Steps Chart Section */}
-      <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-1.5">
-          <h2 className="text-[11px] sm:text-sm font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1">
-            <span>📊</span> Step Activity
-          </h2>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-8">
+        <div className="bg-gradient-to-b from-[#78350f] to-[#451a03] border-2 border-[#b45309] border-t-[#d97706]/60 rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center shadow-[0_8px_16px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-[#facc15]/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-t from-transparent to-[#fde68a]/5 pointer-events-none" />
+          <div className="bg-gradient-to-br from-[#b45309] to-[#78350f] p-2.5 sm:p-3 rounded-full border border-[#fde68a]/30 shadow-inner mb-3 group-hover:scale-110 transition-transform relative z-10">
+            <Route className="w-5 h-5 sm:w-6 sm:h-6 text-[#facc15] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]" />
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-[#fde68a] mb-1 font-bold uppercase tracking-widest relative z-10 opacity-90">
+            Distance
+          </div>
+          <div className="font-black text-amber-100 text-xl sm:text-3xl drop-shadow-md flex items-baseline gap-1 relative z-10">
+            {distanceKm}
+            <span className="text-[10px] sm:text-xs text-[#fde68a]/70 font-bold uppercase">km</span>
+          </div>
+        </div>
+        <div className="bg-gradient-to-b from-[#78350f] to-[#451a03] border-2 border-[#b45309] border-t-[#d97706]/60 rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center shadow-[0_8px_16px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-[#facc15]/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-t from-transparent to-[#fde68a]/5 pointer-events-none" />
+          <div className="bg-gradient-to-br from-[#b45309] to-[#78350f] p-2.5 sm:p-3 rounded-full border border-[#fde68a]/30 shadow-inner mb-3 group-hover:scale-110 transition-transform relative z-10">
+            <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-[#facc15] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]" />
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-[#fde68a] mb-1 font-bold uppercase tracking-widest relative z-10 opacity-90">
+            Calories
+          </div>
+          <div className="font-black text-amber-100 text-xl sm:text-3xl drop-shadow-md flex items-baseline gap-1 relative z-10">
+            {caloriesBurned}
+            <span className="text-[10px] sm:text-xs text-[#fde68a]/70 font-bold uppercase">kcal</span>
+          </div>
+        </div>
+        <div className="bg-gradient-to-b from-[#78350f] to-[#451a03] border-2 border-[#b45309] border-t-[#d97706]/60 rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center shadow-[0_8px_16px_rgba(0,0,0,0.4)] relative overflow-hidden group hover:border-[#facc15]/50 transition-all">
+          <div className="absolute inset-0 bg-gradient-to-t from-transparent to-[#fde68a]/5 pointer-events-none" />
+          <div className="bg-gradient-to-br from-[#b45309] to-[#78350f] p-2.5 sm:p-3 rounded-full border border-[#fde68a]/30 shadow-inner mb-3 group-hover:scale-110 transition-transform relative z-10">
+            <Timer className="w-5 h-5 sm:w-6 sm:h-6 text-[#facc15] drop-shadow-[0_0_6px_rgba(250,204,21,0.4)]" />
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-[#fde68a] mb-1 font-bold uppercase tracking-widest relative z-10 opacity-90">
+            Active Time
+          </div>
+          <div className="font-black text-amber-100 text-xl sm:text-3xl drop-shadow-md flex items-baseline gap-1 relative z-10">
+            {activeTimeMin}
+            <span className="text-[10px] sm:text-xs text-[#fde68a]/70 font-bold uppercase">min</span>
+          </div>
+        </div>
+      </div>
 
-          <div className="flex bg-[#451a03] border border-[#b45309] rounded-md p-0.5">
-            {(['day', 'week', 'month'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => setChartMode(mode)}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors ${
-                  chartMode === mode
-                    ? 'bg-[#b45309] text-white shadow'
-                    : 'text-[#fde68a]/70 hover:text-white'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+      {/* TODAY'S BOOTY & SAFETY Card */}
+      <div className="bg-[#78350f] border-2 border-[#451a03] rounded-2xl p-5 mb-8 shadow-xl">
+        <h2 className="text-sm sm:text-base font-black text-amber-100 uppercase tracking-widest mb-4">TODAY'S BOOTY & SAFETY</h2>
+        
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 text-amber-100/90 font-bold text-xs sm:text-sm tracking-wide">
+            <CircleDollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#facc15]" />
+            Gold Earned Today
+          </div>
+          <div className="font-black text-[#facc15] text-sm sm:text-base">
+            +{goldEarnedToday} Gold
           </div>
         </div>
 
-        {/* Visual Bar Chart */}
-        <div className="h-28 sm:h-36 bg-[#451a03] border border-[#b45309] rounded-lg p-2 flex items-end justify-between gap-1.5 pt-4">
-          {activeChart.map((item, idx) => {
-            const heightPercent = Math.min(100, Math.max(12, (item.steps / maxChartSteps) * 100));
-            return (
-              <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
-                <span className="text-[8px] sm:text-[9px] font-mono text-[#fde68a] mb-0.5 opacity-80 group-hover:opacity-100 font-bold">
-                  {item.steps >= 1000 ? `${(item.steps / 1000).toFixed(1)}k` : item.steps}
-                </span>
+        <hr className="border-t-2 border-dashed border-[#b45309]/50 my-4" />
 
-                <div className="w-full max-w-[24px] bg-[#1c0a02] rounded-t-md h-full flex items-end overflow-hidden p-0.5 border border-[#78350f]">
-                  <div
-                    className="w-full bg-[#16a34a] rounded-t-sm transition-all duration-500 shadow-[0_0_8px_#16a34a]"
-                    style={{ height: `${heightPercent}%` }}
-                  />
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs sm:text-sm font-bold text-amber-100/90 tracking-wide">Today's Shield Goal</span>
+          <span className="text-xs sm:text-sm font-bold text-[#fde68a]">{totalStepsToday.toLocaleString()} / 10,000 Steps</span>
+        </div>
+        <div className="w-full bg-[#1c0a02] h-3 sm:h-4 rounded-full overflow-hidden border border-[#451a03] shadow-inner">
+          <div 
+            className="bg-[#16a34a] h-full shadow-[0_0_10px_#16a34a] transition-all duration-500"
+            style={{ width: `${Math.min(100, (totalStepsToday / stepGoal) * 100)}%` }} 
+          />
+        </div>
+      </div>
+
+      {/* Daily Quests */}
+      <div className="mt-auto pb-4">
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-black text-[#fde68a] mb-3 sm:mb-4 uppercase tracking-widest">
+          <Swords className="w-5 h-5 text-[#facc15]" /> Daily Quests
+        </h2>
+        
+        <div className="bg-gradient-to-r from-[#78350f] to-[#451a03] border-2 border-[#b45309] rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-[0_8px_30px_rgba(0,0,0,0.5)] cursor-pointer hover:border-[#facc15]/50 hover:shadow-[0_8px_30px_rgba(250,204,21,0.2)] transition-all active:scale-95 group relative overflow-hidden">
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+          <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+            <div className="bg-gradient-to-br from-[#b45309] to-[#78350f] p-3 sm:p-4 rounded-xl border-2 border-[#facc15]/30 shadow-inner group-hover:scale-110 transition-transform">
+              <Compass className="w-6 h-6 sm:w-7 sm:h-7 text-[#facc15] drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
+            </div>
+            <div>
+              <h3 className="font-black text-amber-100 text-base sm:text-lg tracking-wide">Afternoon Sprint</h3>
+              <p className="text-xs sm:text-sm text-amber-100/70 mt-0.5 font-medium">Walk 1,500 steps in 15 minutes</p>
+              
+              <div className="inline-flex items-center gap-1.5 bg-[#1c0a02]/80 border border-[#b45309] px-2.5 py-1 rounded-md mt-2 shadow-sm">
+                <span className="text-[10px] sm:text-xs font-black text-[#fbbf24] uppercase tracking-wider">Reward:</span>
+                <span className="text-[10px] sm:text-xs font-black text-[#4ade80]">+50 XP</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-[#451a03] p-2 rounded-full border border-[#b45309] group-hover:bg-[#b45309] transition-colors relative z-10">
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#facc15]" />
+          </div>
+        </div>
+      </div>
+
+      {/* VIEW SWITCHER TABS: Map View vs Step Charts */}
+      <div className="flex items-center justify-center gap-1.5 bg-[#451a03] border-2 sm:border-3 border-[#78350f] rounded-xl p-1 shadow-lg mt-6">
+        <button
+          onClick={() => setActiveTab('map')}
+          className={`flex-1 py-1.5 px-2 rounded-lg font-serif font-black text-[11px] sm:text-xs uppercase italic flex items-center justify-center gap-1.5 transition-all shadow-md ${
+            activeTab === 'map'
+              ? 'bg-[#b45309] border border-[#facc15] text-white'
+              : 'bg-[#78350f] text-[#fde68a] hover:bg-[#92400e]'
+          }`}
+        >
+          <MapIcon className="w-3.5 h-3.5 text-[#facc15]" />
+          <span>Footprint Voyage Map</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('chart')}
+          className={`flex-1 py-1.5 px-2 rounded-lg font-serif font-black text-[11px] sm:text-xs uppercase italic flex items-center justify-center gap-1.5 transition-all shadow-md ${
+            activeTab === 'chart'
+              ? 'bg-[#b45309] border border-[#facc15] text-white'
+              : 'bg-[#78350f] text-[#fde68a] hover:bg-[#92400e]'
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5 text-sky-300" />
+          <span>Step Activity</span>
+        </button>
+      </div>
+
+      {/* MODE 1: FOOTPRINT GPS MAP VIEW */}
+      {activeTab === 'map' ? (
+        <div className="w-full flex-1 flex flex-col mt-4">
+          <StepMapView />
+        </div>
+      ) : (
+        /* MODE 2: STEP CHART VIEW */
+        <div className="bg-[#78350f] border-2 sm:border-4 border-[#451a03] rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl space-y-2 mt-4">
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
+            <h2 className="text-[11px] sm:text-sm font-serif font-black uppercase text-[#fde68a] tracking-wider flex items-center gap-1">
+              <span>📊</span> Step Activity History
+            </h2>
+            <div className="flex bg-[#451a03] border border-[#b45309] rounded-md p-0.5">
+              {(['day', 'week', 'month'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setChartMode(mode)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors ${
+                    chartMode === mode
+                      ? 'bg-[#b45309] text-white shadow'
+                      : 'text-[#fde68a]/70 hover:text-white'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Visual Bar Chart */}
+          <div className="h-32 sm:h-44 bg-[#451a03] border border-[#b45309] rounded-lg p-2 flex items-end justify-between gap-1.5 pt-4">
+            {activeChart.map((item, idx) => {
+              const heightPercent = Math.min(100, Math.max(12, (item.steps / maxChartSteps) * 100));
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
+                  <span className="text-[8px] sm:text-[9px] font-mono text-[#fde68a] mb-0.5 opacity-80 group-hover:opacity-100 font-bold">
+                    {item.steps >= 1000 ? `${(item.steps / 1000).toFixed(1)}k` : item.steps}
+                  </span>
+                  <div className="w-full max-w-[24px] bg-[#1c0a02] rounded-t-md h-full flex items-end overflow-hidden p-0.5 border border-[#78350f]">
+                    <div
+                      className="w-full bg-[#16a34a] rounded-t-sm transition-all duration-500 shadow-[0_0_8px_#16a34a]"
+                      style={{ height: `${heightPercent}%` }}
+                    />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[#fde68a] mt-1 font-serif uppercase leading-none">
+                    {item.label}
+                  </span>
                 </div>
-
-                <span className="text-[9px] sm:text-[10px] font-bold text-[#fde68a] mt-1 font-serif uppercase leading-none">
-                  {item.label}
-                </span>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

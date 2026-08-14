@@ -14,10 +14,12 @@ import { ShipInspectModal } from './components/ShipInspectModal';
 import { ProfileModal } from './components/ProfileModal';
 import { soundFx } from './utils/audio';
 
+import { LeaderboardScreen } from './components/LeaderboardScreen';
+
 type ActiveModal = 'upgrades' | 'shop' | 'server' | 'repair' | 'raids' | 'attack' | 'shipInspect' | 'profile' | null;
 
 function MainAppContent() {
-  const [activeTab, setActiveTab] = useState<'menu' | 'home' | 'game'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'home' | 'game' | 'leaderboard'>('menu');
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   // Smooth Drag & Swipe Physics State for Side-by-Side Screens
@@ -145,11 +147,12 @@ function MainAppContent() {
       <div className="w-full max-w-md sm:max-w-2xl bg-[#78350f] border-0 sm:border-8 border-[#451a03] sm:rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden h-full max-h-[100dvh] sm:max-h-[850px] flex flex-col relative z-10">
         
         {/* HUD Top Bar */}
-        {activeTab !== 'menu' && (
+        {activeTab !== 'menu' && activeTab !== 'leaderboard' && (
           <HeaderHUD
             activeTab={activeTab as 'home' | 'game'}
             setActiveTab={(tab: 'home' | 'game') => setActiveTab(tab)}
             openModal={openModal}
+            onBackToMenu={() => setActiveTab('menu')}
           />
         )}
 
@@ -158,7 +161,10 @@ function MainAppContent() {
           <MenuScreen 
             onSelectSteps={() => setActiveTab('home')}
             onSelectGame={() => setActiveTab('game')}
+            onSelectLeaderboard={() => setActiveTab('leaderboard')}
           />
+        ) : activeTab === 'leaderboard' ? (
+          <LeaderboardScreen onBack={() => setActiveTab('menu')} />
         ) : (
           <main 
             onTouchStart={handleTouchStart}

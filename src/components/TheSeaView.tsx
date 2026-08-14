@@ -443,7 +443,7 @@ const ShipOnSeaItem = React.memo(({ ship, isSelected, onClick, onFireBomb }: {
   const shieldRawImg = getShieldImageForLevel(ship.shieldLevel);
 
   // Opaque Cutout Hooks so images are completely solid with 0 background
-  const shipImg = useCutoutImage(shipRawImg, { mode: 'edge' });
+  const shipImg = useCutoutImage(shipRawImg, { mode: 'edge', keepInternalGreenAsBlack: ship.shipLevel === 1 });
   const cannonImg = useCutoutImage(cannonRawImg);
   const shieldImg = useCutoutImage(shieldRawImg);
 
