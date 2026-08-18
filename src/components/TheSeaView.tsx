@@ -51,6 +51,7 @@ export const TheSeaView: React.FC<TheSeaViewProps> = ({
   } = useGame();
 
   const [selectedShip, setSelectedShip] = useState<SailingShip | null>(null);
+  const bombCutout = useCutoutImage(ASSETS.bombBtn, { mode: 'edge', keepInternalGreenAsBlack: false });
 
   // Direct battle state inside Sea view for immediate action feedback
   const [isFiringSalvo, setIsFiringSalvo] = useState<boolean>(false);
@@ -282,6 +283,7 @@ export const TheSeaView: React.FC<TheSeaViewProps> = ({
           <ShipOnSeaItem
             key={ship.id}
             ship={ship}
+            bombCutout={bombCutout}
             isSelected={selectedShip?.id === ship.id}
             onClick={() => setSelectedShip(ship)}
             onFireBomb={() => handleFireBombOnShip(ship)}
@@ -293,7 +295,7 @@ export const TheSeaView: React.FC<TheSeaViewProps> = ({
       {isFiringSalvo && (
         <div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center space-y-4 animate-fade-in p-4 text-center">
           <img
-            src={ASSETS.bombBtn}
+            src={bombCutout}
             alt="Firing"
             referrerPolicy="no-referrer"
             className="w-24 h-24 object-contain animate-bounce filter drop-shadow-[0_0_20px_rgba(230,57,70,1)]"
@@ -416,7 +418,7 @@ export const TheSeaView: React.FC<TheSeaViewProps> = ({
               className="w-full bg-red-700 hover:bg-red-600 border-b-4 border-red-950 text-white py-2.5 rounded-xl font-black text-xs uppercase italic flex items-center justify-center gap-2 shadow-xl active:translate-y-1"
             >
               <img
-                src={ASSETS.bombBtn}
+                src={bombCutout}
                 alt="Bomb"
                 referrerPolicy="no-referrer"
                 className="w-5 h-5 object-contain animate-bounce"
@@ -432,8 +434,9 @@ export const TheSeaView: React.FC<TheSeaViewProps> = ({
 };
 
 // Individual Sailing Ship Component on the Ocean
-const ShipOnSeaItem = React.memo(({ ship, isSelected, onClick, onFireBomb }: {
+const ShipOnSeaItem = React.memo(({ ship, bombCutout, isSelected, onClick, onFireBomb }: {
   ship: SailingShip;
+  bombCutout?: string;
   isSelected: boolean;
   onClick: () => void;
   onFireBomb: () => void;
@@ -505,7 +508,17 @@ const ShipOnSeaItem = React.memo(({ ship, isSelected, onClick, onFireBomb }: {
             }}
             className="bg-red-600 hover:bg-red-500 text-white font-black text-[9px] sm:text-[11px] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl border-2 border-[#facc15] shadow-[0_0_15px_rgba(220,38,38,0.9)] uppercase italic whitespace-nowrap flex items-center gap-1 active:scale-95"
           >
-            <span>💣 BOMB!</span>
+            {bombCutout ? (
+              <img
+                src={bombCutout}
+                alt="Bomb"
+                referrerPolicy="no-referrer"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain"
+              />
+            ) : (
+              <span>💣</span>
+            )}
+            <span>BOMB!</span>
           </button>
           <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-6 border-t-[#facc15]" />
         </div>

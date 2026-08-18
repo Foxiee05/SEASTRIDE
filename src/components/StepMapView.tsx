@@ -83,8 +83,6 @@ export const StepMapView: React.FC<StepMapViewProps> = () => {
     isGpsActive,
     gpsError,
     totalDistanceTraveledMeters,
-    isSimulatingWalk,
-    toggleSimulateWalk,
     logPedometerStep,
     clearTrace,
     startGpsTracking,
@@ -246,28 +244,6 @@ export const StepMapView: React.FC<StepMapViewProps> = () => {
         {/* Action Buttons: Simulate Walk & Style */}
         <div className="flex items-center gap-1 pointer-events-auto">
           <button
-            onClick={toggleSimulateWalk}
-            className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase italic shadow flex items-center gap-1 border-b-2 transition-all ${
-              isSimulatingWalk
-                ? 'bg-red-700 hover:bg-red-600 text-white border-red-950 animate-pulse'
-                : 'bg-[#16a34a] hover:bg-[#22c55e] text-white border-[#064e3b]'
-            }`}
-            title="Simulate realistic physical walking path with footprints"
-          >
-            {isSimulatingWalk ? (
-              <>
-                <Square className="w-3 h-3 fill-white" />
-                <span>Stop Walk</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3 h-3 fill-white" />
-                <span>Simulate Walk</span>
-              </>
-            )}
-          </button>
-
-          <button
             onClick={() => setMapStyle(s => s === 'parchment' ? 'standard' : 'parchment')}
             className="bg-[#78350f] hover:bg-[#92400e] text-[#fde68a] border border-[#b45309] px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-bold uppercase shadow"
             title="Toggle Vintage Parchment Filter"
@@ -284,14 +260,15 @@ export const StepMapView: React.FC<StepMapViewProps> = () => {
 
       {/* LEAFLET OPENSTREETMAP CANVAS */}
       <div
-        ref={mapContainerRef}
         className={`w-full h-full relative z-10 transition-all duration-300 ${
           mapStyle === 'parchment'
             ? 'filter sepia-[0.45] hue-rotate-[-20deg] contrast-[1.12] brightness-[0.96] saturate-[1.25]'
             : ''
         }`}
         style={{ minHeight: '100%' }}
-      />
+      >
+        <div ref={mapContainerRef} className="w-full h-full" />
+      </div>
 
       {/* Vintage Map Parchment Paper Texture & Vignette Overlay */}
       {mapStyle === 'parchment' && (

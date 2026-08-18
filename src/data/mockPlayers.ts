@@ -1,4 +1,5 @@
 import { Player, ServerInfo } from '../types';
+import { PIRATE_AVATARS } from '../assets';
 
 const PIRATE_NAMES = [
   'Captain Blackbeard', 'Calico Jack', 'Anne Bonny', 'Mary Read', 'Redbeard Drake',
@@ -28,12 +29,13 @@ export function generatePlayers(count: number): Player[] {
     const cannonLevel = Math.min(10, Math.floor(Math.random() * 6) + 1);
     const cannonCount = Math.floor(Math.random() * 4) + 1;
     const shieldLevel = Math.floor(Math.random() * 4); // 0 to 3
+    const avatar = PIRATE_AVATARS[(i - 1) % PIRATE_AVATARS.length].url;
 
     players.push({
       id: `player_${i}`,
       name,
       title,
-      avatarUrl: `https://picsum.photos/seed/pirate${i}/100/100`,
+      avatarUrl: avatar,
       shipLevel,
       shipCondition: condition,
       currentHp,

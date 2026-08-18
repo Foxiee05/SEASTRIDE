@@ -56,6 +56,15 @@ interface GameContextType {
   addSteps: (amount: number) => void;
   isAutoWalking: boolean;
   toggleAutoWalk: () => void;
+  playerLevel: number;
+  playerXp: number;
+  gainXp: (amount: number) => void;
+
+  // Quests
+  questIndex: number;
+  questXp: number;
+  claimedQuests: Set<string>;
+  claimQuest: (questId: string, xp: number) => void;
   
   // Actions
   attackPlayer: (target: Player) => BattleResult | null;
@@ -161,6 +170,38 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAutoWalking, setIsAutoWalking] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
+  // Player Level & XP (500 XP per level, grants 200 coins on every level up)
+  const [playerLevel, setPlayerLevel] = useState<number>(1);
+  const [playerXp, setPlayerXp] = useState<number>(250);
+
+  const gainXp = (amount: number) => {
+    if (amount <= 0) return;
+    setPlayerXp(prev => {
+      const newXp = prev + amount;
+      if (newXp >= 500) {
+        const levelsGained = Math.floor(newXp / 500);
+        setPlayerLevel(l => l + levelsGained);
+        // Every time user levels up, they get 200 coins per level
+        const bonusCoins = levelsGained * 200;
+        setCoins(c => c + bonusCoins);
+        soundFx.playVictory();
+      }
+      return newXp % 500;
+    });
+  };
+
+  // Quests
+  const [questIndex, setQuestIndex] = useState(0);
+  const [questXp, setQuestXp] = useState(0);
+  const [claimedQuests, setClaimedQuests] = useState<Set<string>>(new Set());
+
+  const claimQuest = (questId: string, xp: number) => {
+    setClaimedQuests(prev => new Set(prev).add(questId));
+    setQuestXp(prev => prev + xp);
+    setQuestIndex(prev => prev + 1);
+    gainXp(xp);
+  };
+
   // Logs
   const [raidLogs, setRaidLogs] = useState<RaidLog[]>([
     {
@@ -188,7 +229,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const shipMaxHp = 5000 + (shipLevel - 1) * 5000;
   const shipCurrentHp = Math.round(shipMaxHp * (shipCondition / 100));
 
-  // Add Steps & Reward logic (100 steps = 10 coins)
+  // Add Steps & Reward logic (100 steps = 10 coins, + steps gain XP toward level up)
   const addSteps = (amount: number) => {
     setTotalStepsToday(prev => {
       const updated = prev + amount;
@@ -199,6 +240,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updated;
     });
+
+    gainXp(amount);
 
     // update today's record in chart
     setStepRecords(prev => {
@@ -585,6 +628,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addSteps,
         isAutoWalking,
         toggleAutoWalk,
+        playerLevel,
+        playerXp,
+        gainXp,
+        questIndex,
+        questXp,
+        claimedQuests,
+        claimQuest,
         attackPlayer,
         repairShip,
         rebuildShip,

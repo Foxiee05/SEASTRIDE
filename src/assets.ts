@@ -75,7 +75,7 @@ export const ASSETS = {
 
 // Immediately pre-warm ship cutouts with edge detection for green screen
 preloadCutouts([
-  pirateShipLv1,
+  generatedLogo,
   pirateShipLv2,
   pirateShipLv3,
   pirateShipLv4,
@@ -91,7 +91,13 @@ preloadCutouts([
   pirateShieldLv4,
   pirateShieldLv5,
   pirateShieldLv6,
-], { mode: 'edge' });
+  pirateBombBtn,
+], { mode: 'edge', keepInternalGreenAsBlack: false });
+
+// Specific pre-warm for lv1 ship to retain flag color
+preloadCutouts([
+  pirateShipLv1,
+], { mode: 'edge', keepInternalGreenAsBlack: true });
 
 // Pre-warm cannons with default white background removal
 preloadCutouts([

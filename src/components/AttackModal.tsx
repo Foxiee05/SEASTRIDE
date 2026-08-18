@@ -15,6 +15,8 @@ export const AttackModal: React.FC<AttackModalProps> = ({ onClose }) => {
   const [isAttacking, setIsAttacking] = useState<boolean>(false);
   const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
 
+  const bombCutout = useCutoutImage(ASSETS.bombBtn, { mode: 'edge', keepInternalGreenAsBlack: false });
+
   const players = currentServer.players;
 
   const handleRandomSelect = () => {
@@ -43,7 +45,7 @@ export const AttackModal: React.FC<AttackModalProps> = ({ onClose }) => {
         <div className="bg-[#451a03] border-b-4 border-[#78350f] p-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src={ASSETS.bombBtn}
+              src={bombCutout}
               alt="Bomb"
               referrerPolicy="no-referrer"
               className="w-7 h-7 object-contain"
@@ -127,7 +129,7 @@ export const AttackModal: React.FC<AttackModalProps> = ({ onClose }) => {
             <div className="py-12 text-center space-y-4">
               <div className="relative inline-block">
                 <img
-                  src={ASSETS.bombBtn}
+                  src={bombCutout}
                   alt="Firing"
                   referrerPolicy="no-referrer"
                   className="w-24 h-24 object-contain animate-spin mx-auto filter drop-shadow-[0_0_20px_rgba(230,57,70,1)]"
@@ -180,7 +182,13 @@ export const AttackModal: React.FC<AttackModalProps> = ({ onClose }) => {
                     disabled={energy < 1}
                     className="w-full bg-red-700 hover:bg-red-600 border-b-4 border-r-2 border-red-950 text-white font-black py-3 rounded-xl uppercase italic tracking-wider text-base shadow-2xl active:translate-y-1 flex items-center justify-center gap-2"
                   >
-                    <span>💣 FIRE BOMB SALVO!</span>
+                    <img
+                      src={bombCutout}
+                      alt="Bomb"
+                      referrerPolicy="no-referrer"
+                      className="w-6 h-6 object-contain animate-bounce"
+                    />
+                    <span>FIRE BOMB SALVO!</span>
                   </button>
                 </div>
               )}

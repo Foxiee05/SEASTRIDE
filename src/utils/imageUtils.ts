@@ -22,6 +22,7 @@ export function processCutoutImage(
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
@@ -37,17 +38,35 @@ export function processCutoutImage(
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imgData.data;
 
+        const W = canvas.width;
+        const H = canvas.height;
+        const totalPixels = W * H;
+
         const bgR = data[0];
         const bgG = data[1];
         const bgB = data[2];
 
-        // Auto-detect green screen background from top-left pixel
-        const isGreenScreen = (bgG > bgR + 25 && bgG > bgB + 25) || mode === 'edge';
+        // Sample the 4 corners: (0,0), (W-1, 0), (0, H-1), (W-1, H-1)
+        const cornerIndices = [
+          0,
+          (W - 1) * 4,
+          (H - 1) * W * 4,
+          ((H - 1) * W + (W - 1)) * 4
+        ];
+        let cornerGreenCount = 0;
+        let cornerLightCount = 0;
+        for (const c of cornerIndices) {
+          const cr = data[c];
+          const cg = data[c + 1];
+          const cb = data[c + 2];
+          if (cg > cr + 10 && cg > cb + 10) cornerGreenCount++;
+          if (cr > 200 && cg > 200 && cb > 200) cornerLightCount++;
+        }
+
+        // Auto-detect green screen background from corners or mode
+        const isGreenScreen = cornerGreenCount >= 2 || (bgG > bgR + 15 && bgG > bgB + 15) || mode === 'edge';
 
         if (isGreenScreen) {
-          const W = canvas.width;
-          const H = canvas.height;
-          const totalPixels = W * H;
           const isBg = new Uint8Array(totalPixels);
           const queue = new Int32Array(totalPixels);
           let head = 0;
@@ -58,7 +77,7 @@ export function processCutoutImage(
             const pg = data[idx4 + 1];
             const pb = data[idx4 + 2];
             const dist = Math.sqrt(Math.pow(pr - bgR, 2) + Math.pow(pg - bgG, 2) + Math.pow(pb - bgB, 2));
-            return (pg > pr + 12 && pg > pb + 12) || dist < 65;
+            return (pg > pr + 10 && pg > pb + 10) || dist < 70;
           };
 
           // Seed border pixels
@@ -183,8 +202,14 @@ export function processCutoutImage(
       }
     };
 
-    img.onerror = () => resolve(src);
-    img.src = src;
+    img.onerror = (e) => {
+      console.error('Cutout Image load failed:', e, src);
+      resolve(src);
+    };
+    
+    // Check if src is data URI, otherwise append a cache buster for CORS
+    const isDataUri = src.startsWith('data:');
+    img.src = isDataUri ? src : `${src}${src.includes('?') ? '&' : '?'}corsbuster=${Date.now()}`;
   });
 }
 

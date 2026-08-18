@@ -3,12 +3,41 @@ import { useGame } from '../context/GameContext';
 import { Footprints, CircleDollarSign, Flame, Compass, ChevronRight, Route, Timer, Swords, Calendar, TrendingUp, Shield, Map as MapIcon, BarChart3 } from 'lucide-react';
 import { usePedometer } from '../hooks/usePedometer';
 import { StepMapView } from './StepMapView';
+import { soundFx } from '../utils/audio';
+
+const DAILY_QUESTS = [
+  { id: 'q1', title: 'Morning Stroll', desc: 'Walk 1,500 steps', target: 1500, xp: 50 },
+  { id: 'q2', title: 'Afternoon Sprint', desc: 'Walk 3,000 steps', target: 3000, xp: 100 },
+  { id: 'q3', title: 'Treasure Hunter', desc: 'Walk 5,000 steps', target: 5000, xp: 150 },
+  { id: 'q4', title: 'Ocean Voyager', desc: 'Walk 10,000 steps', target: 10000, xp: 300 },
+];
 
 export const HomeScreen: React.FC = () => {
-  const { totalStepsToday, addSteps, shipLevel, profile, stepRecords, stepStats } = useGame();
+  const { totalStepsToday, addSteps, shipLevel, profile, stepRecords, stepStats, questIndex, questXp, claimedQuests, claimQuest, playerLevel, playerXp } = useGame();
   
   const [activeTab, setActiveTab] = useState<'map' | 'chart'>('map');
   const [chartMode, setChartMode] = useState<'day' | 'week' | 'month'>('week');
+  const [animating, setAnimating] = useState(false);
+
+  const currentQuest = DAILY_QUESTS[Math.min(questIndex, DAILY_QUESTS.length - 1)];
+  const isAllQuestsDone = questIndex >= DAILY_QUESTS.length;
+  const questProgress = Math.min(totalStepsToday, currentQuest.target);
+  const isClaimable = !isAllQuestsDone && questProgress >= currentQuest.target && !claimedQuests.has(currentQuest.id);
+
+  const handleClaimQuest = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!isClaimable || animating) return;
+    
+    soundFx.playVictory();
+    setAnimating(true);
+    
+    setTimeout(() => {
+      claimQuest(currentQuest.id, currentQuest.xp);
+      setTimeout(() => {
+        setAnimating(false);
+      }, 50);
+    }, 300);
+  };
 
   // Chart data calculation
   const dayData = [
@@ -54,9 +83,9 @@ export const HomeScreen: React.FC = () => {
   const weeklyGoldEarned = 1450;
   const weeklyDistanceGoal = 25;
 
-  const currentXp = totalStepsToday % 500;
+  const currentXp = playerXp;
   const maxXp = 500;
-  const displayLevel = shipLevel || 4;
+  const displayLevel = playerLevel;
 
   // If user hasn't granted motion pedometer permission yet, show permission prompt box only
   if (permissionStatus !== 'granted') {
@@ -117,7 +146,12 @@ export const HomeScreen: React.FC = () => {
       {/* Level & XP Progress Card */}
       <div className="bg-[#78350f]/40 border border-[#b45309]/50 rounded-2xl p-4 sm:p-5 mb-8 shadow-sm">
         <div className="flex justify-between items-center mb-3">
-          <span className="font-extrabold text-amber-100 tracking-wider text-sm sm:text-base uppercase">LEVEL {displayLevel}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-amber-100 tracking-wider text-sm sm:text-base uppercase">LEVEL {displayLevel}</span>
+            <span className="text-[10px] sm:text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
+              +200 🪙 on Level Up
+            </span>
+          </div>
           <span className="text-sm font-bold text-[#fde68a]">{currentXp} / {maxXp} XP</span>
         </div>
         <div className="w-full bg-[#1c0a02]/60 h-2 sm:h-2.5 rounded-full overflow-hidden border border-[#451a03]">
@@ -241,25 +275,60 @@ export const HomeScreen: React.FC = () => {
           <Swords className="w-5 h-5 text-[#facc15]" /> Daily Quests
         </h2>
         
-        <div className="bg-gradient-to-r from-[#78350f] to-[#451a03] border-2 border-[#b45309] rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-[0_8px_30px_rgba(0,0,0,0.5)] cursor-pointer hover:border-[#facc15]/50 hover:shadow-[0_8px_30px_rgba(250,204,21,0.2)] transition-all active:scale-95 group relative overflow-hidden">
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-          <div className="flex items-center gap-3 sm:gap-4 relative z-10">
-            <div className="bg-gradient-to-br from-[#b45309] to-[#78350f] p-3 sm:p-4 rounded-xl border-2 border-[#facc15]/30 shadow-inner group-hover:scale-110 transition-transform">
-              <Compass className="w-6 h-6 sm:w-7 sm:h-7 text-[#facc15] drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
+        <div 
+          className={`bg-gradient-to-r from-[#78350f] to-[#451a03] border-2 ${isClaimable ? 'border-[#16a34a]' : 'border-[#b45309]'} rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all relative overflow-hidden`}
+        >
+          {/* Progress Bar (Background) */}
+          {!isAllQuestsDone && (
+            <div 
+              className="absolute left-0 top-0 bottom-0 bg-[#facc15]/10 transition-all duration-500 ease-in-out"
+              style={{ width: `${(questProgress / currentQuest.target) * 100}%` }}
+            />
+          )}
+          <div className={`absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent ${isClaimable && !animating ? 'animate-[shimmer_1.5s_infinite]' : ''}`} />
+          
+          <div className={`flex items-center gap-3 sm:gap-4 relative z-10 transition-all duration-300 ${animating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
+            <div className={`bg-gradient-to-br from-[#b45309] to-[#78350f] p-3 sm:p-4 rounded-xl border-2 ${isClaimable ? 'border-[#4ade80]' : 'border-[#facc15]/30'} shadow-inner`}>
+              <Compass className={`w-6 h-6 sm:w-7 sm:h-7 ${isClaimable ? 'text-[#4ade80]' : 'text-[#facc15]'} drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]`} />
             </div>
             <div>
-              <h3 className="font-black text-amber-100 text-base sm:text-lg tracking-wide">Afternoon Sprint</h3>
-              <p className="text-xs sm:text-sm text-amber-100/70 mt-0.5 font-medium">Walk 1,500 steps in 15 minutes</p>
+              <h3 className="font-black text-amber-100 text-base sm:text-lg tracking-wide">
+                {isAllQuestsDone ? 'All Quests Completed!' : currentQuest.title}
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-100/70 mt-0.5 font-medium">
+                {isAllQuestsDone ? 'Come back tomorrow for more quests.' : currentQuest.desc}
+              </p>
               
-              <div className="inline-flex items-center gap-1.5 bg-[#1c0a02]/80 border border-[#b45309] px-2.5 py-1 rounded-md mt-2 shadow-sm">
-                <span className="text-[10px] sm:text-xs font-black text-[#fbbf24] uppercase tracking-wider">Reward:</span>
-                <span className="text-[10px] sm:text-xs font-black text-[#4ade80]">+50 XP</span>
-              </div>
+              {!isAllQuestsDone && (
+                <div className="inline-flex items-center gap-1.5 bg-[#1c0a02]/80 border border-[#b45309] px-2.5 py-1 rounded-md mt-2 shadow-sm">
+                  <span className="text-[10px] sm:text-xs font-black text-[#fbbf24] uppercase tracking-wider">Reward:</span>
+                  <span className="text-[10px] sm:text-xs font-black text-[#4ade80]">+{currentQuest.xp} XP</span>
+                </div>
+              )}
             </div>
           </div>
-          <div className="bg-[#451a03] p-2 rounded-full border border-[#b45309] group-hover:bg-[#b45309] transition-colors relative z-10">
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#facc15]" />
-          </div>
+          
+          {!isAllQuestsDone && (
+            <div 
+              onClick={isClaimable ? handleClaimQuest : undefined}
+              className={`
+                transition-all duration-300 relative z-10 flex items-center justify-center rounded-full border
+                ${isClaimable 
+                  ? 'bg-[#16a34a] border-[#22c55e] cursor-pointer hover:bg-[#22c55e] hover:scale-105 hover:brightness-110 active:scale-95 animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.4)] p-2' 
+                  : 'bg-gray-800/80 border-gray-600 opacity-60 cursor-not-allowed px-3 py-1.5 grayscale'
+                }
+                ${animating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}
+              `}
+            >
+              {isClaimable ? (
+                <span className="text-[10px] sm:text-xs font-black text-white px-1 sm:px-2 drop-shadow-md">CLAIM</span>
+              ) : (
+                <span className="text-[10px] sm:text-xs font-black text-gray-300 whitespace-nowrap tracking-wide">
+                  {questProgress.toLocaleString()} / {currentQuest.target.toLocaleString()}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

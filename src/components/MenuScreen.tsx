@@ -4,6 +4,7 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { ASSETS } from '../assets';
 import { useCutoutImage } from '../utils/imageUtils';
 import { useGame } from '../context/GameContext';
+import { soundFx } from '../utils/audio';
 
 interface MenuScreenProps {
   onSelectSteps: () => void;
@@ -14,6 +15,11 @@ interface MenuScreenProps {
 export function MenuScreen({ onSelectSteps, onSelectGame, onSelectLeaderboard }: MenuScreenProps) {
   const transparentLogo = useCutoutImage(ASSETS.logo, { mode: 'edge' });
   const { isMuted, toggleMute } = useGame();
+
+  const handleButtonClick = (action: () => void) => {
+    soundFx.playClick();
+    action();
+  };
 
   return (
     <div className="absolute inset-0 w-full h-full z-50 flex flex-col items-center justify-center overflow-hidden">
@@ -61,52 +67,43 @@ export function MenuScreen({ onSelectSteps, onSelectGame, onSelectLeaderboard }:
         >
           {/* Steps Counter Button */}
           <button 
-            onClick={onSelectSteps}
-            className="w-full relative group active:scale-95 transition-transform"
+            onClick={() => handleButtonClick(onSelectSteps)}
+            className="w-full relative group active:scale-95 transition-transform select-none"
           >
-            <div className="absolute inset-0 bg-[#451a03] rounded-xl translate-y-1 sm:translate-y-2"></div>
-            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#f59e0b] to-[#d97706] rounded-xl border-2 border-[#fef3c7] flex flex-col items-center justify-center shadow-lg overflow-hidden">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-30 mix-blend-overlay"></div>
-              <div className="flex items-center justify-center gap-3 z-10">
-                <span className="text-2xl sm:text-3xl drop-shadow-md">👟</span>
-                <span className="font-black text-white text-xl sm:text-2xl tracking-wider drop-shadow-md uppercase">
-                  Steps Counter
-                </span>
-              </div>
+            <div className="absolute inset-0 bg-[#451a03] rounded-2xl translate-y-1.5 sm:translate-y-2"></div>
+            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#d97706] via-[#b45309] to-[#78350f] rounded-2xl border-3 sm:border-4 border-[#facc15] flex flex-col items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] overflow-hidden group-hover:brightness-110 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/20 pointer-events-none"></div>
+              <span className="font-serif font-black text-[#fef3c7] text-xl sm:text-2xl tracking-widest uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-10 text-center px-2">
+                Steps Counter
+              </span>
             </div>
           </button>
 
           {/* Gameplay Button */}
           <button 
-            onClick={onSelectGame}
-            className="w-full relative group active:scale-95 transition-transform"
+            onClick={() => handleButtonClick(onSelectGame)}
+            className="w-full relative group active:scale-95 transition-transform select-none"
           >
-            <div className="absolute inset-0 bg-[#064e3b] rounded-xl translate-y-1 sm:translate-y-2"></div>
-            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#10b981] to-[#059669] rounded-xl border-2 border-[#ecfdf5] flex flex-col items-center justify-center shadow-lg overflow-hidden">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-30 mix-blend-overlay"></div>
-              <div className="flex items-center justify-center gap-3 z-10">
-                <span className="text-2xl sm:text-3xl drop-shadow-md">🏴‍☠️</span>
-                <span className="font-black text-white text-xl sm:text-2xl tracking-wider drop-shadow-md uppercase">
-                  Gameplay
-                </span>
-              </div>
+            <div className="absolute inset-0 bg-[#172554] rounded-2xl translate-y-1.5 sm:translate-y-2"></div>
+            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#2563eb] via-[#1d4ed8] to-[#1e3a8a] rounded-2xl border-3 sm:border-4 border-[#93c5fd] flex flex-col items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] overflow-hidden group-hover:brightness-110 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/20 pointer-events-none"></div>
+              <span className="font-serif font-black text-white text-xl sm:text-2xl tracking-widest uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-10 text-center px-2">
+                Gameplay
+              </span>
             </div>
           </button>
 
           {/* Leaderboard Button */}
           <button 
-            onClick={onSelectLeaderboard}
-            className="w-full relative group active:scale-95 transition-transform"
+            onClick={() => handleButtonClick(onSelectLeaderboard)}
+            className="w-full relative group active:scale-95 transition-transform select-none"
           >
-            <div className="absolute inset-0 bg-[#312e81] rounded-xl translate-y-1 sm:translate-y-2"></div>
-            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#6366f1] to-[#4338ca] rounded-xl border-2 border-[#e0e7ff] flex flex-col items-center justify-center shadow-lg overflow-hidden">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')] opacity-30 mix-blend-overlay"></div>
-              <div className="flex items-center justify-center gap-3 z-10">
-                <span className="text-2xl sm:text-3xl drop-shadow-md">🏆</span>
-                <span className="font-black text-white text-xl sm:text-2xl tracking-wider drop-shadow-md uppercase">
-                  Leaderboard
-                </span>
-              </div>
+            <div className="absolute inset-0 bg-[#451a03] rounded-2xl translate-y-1.5 sm:translate-y-2"></div>
+            <div className="relative h-16 sm:h-20 bg-gradient-to-b from-[#b45309] via-[#92400e] to-[#78350f] rounded-2xl border-3 sm:border-4 border-[#facc15] flex flex-col items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.5)] overflow-hidden group-hover:brightness-110 transition-all">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-white/20 pointer-events-none"></div>
+              <span className="font-serif font-black text-[#fde68a] text-xl sm:text-2xl tracking-widest uppercase italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] z-10 text-center px-2">
+                Leaderboard
+              </span>
             </div>
           </button>
         </motion.div>
